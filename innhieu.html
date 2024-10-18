@@ -1,0 +1,493 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>In đơn hàng</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.25/js/dataTables.bootstrap5.min.js"></script>
+    <style>
+        body {
+            font-family: 'Times New Roman', Times, serif, sans-serif;
+            background-color: #f8f9fa;
+            font-size: 16px;
+        }
+
+        th,
+        td {
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                font-size: 14px;
+            }
+        }
+
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #printArea {
+            display: none;
+        }
+
+        #selectAll,
+        .row-checkbox {
+            width: 25px;
+            height: 25px;
+            transform: scale(1.5);
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        @media (max-width: 768px) {
+
+            #selectAll,
+            .row-checkbox {
+                width: 20px;
+                height: 20px;
+                transform: scale(1.2);
+            }
+        }
+
+        #printSelectedBtn {
+            font-size: 1.1em;
+            padding: 10px 20px;
+        }
+
+        @media (max-width: 768px) {
+            #printSelectedBtn {
+                font-size: 1em;
+                padding: 8px 16px;
+                width: 100%;
+                margin-bottom: 15px;
+            }
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        #dataTable th,
+        #dataTable td {
+            white-space: nowrap;
+            padding: 10px;
+        }
+
+        @media (max-width: 768px) {
+
+            #dataTable th,
+            #dataTable td {
+                padding: 5px;
+            }
+        }
+
+        .qr-code img {
+            max-width: 80px;
+            max-height: 80px;
+        }
+
+        @media (max-width: 768px) {
+            .qr-code img {
+                max-width: 60px;
+                max-height: 60px;
+            }
+        }
+
+        @media print {
+            @page {
+                size: 100mm 30mm;
+                margin: 0;
+            }
+
+            body {
+                margin: 0;
+                padding: 0;
+            }
+
+            #printArea {
+                display: block;
+            }
+
+            .print-label {
+                width: 100mm;
+                height: 30mm;
+                page-break-after: always;
+                display: flex;
+                box-sizing: border-box;
+                padding: 2mm;
+                background-image: url('https://hoangmv.github.io/hang/4097b9f6c5127c4c2503.jpg'); /* Thay đổi đường dẫn này */
+                background-size: contain;
+                background-position: center;
+                background-repeat: no-repeat;
+                position: relative;
+                background-color: white;
+            }
+            .print-label::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(255, 255, 255, 0.5); /* Điều chỉnh độ mờ ở đây */
+                z-index: 1;
+            }
+
+            .info-section {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                position: relative;
+                z-index: 2;
+            }
+
+            .info-row {
+                font-size: 20px;
+                font-weight: bold;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .small {
+                float: right;
+                font-size: 13px;
+                margin-top: 9px;
+            }
+
+            .info-row.lon {
+                font-size: 24px;
+            }
+
+            .info-row strong {
+                font-size: 20px;
+            }
+
+            .qr-code-section {
+                width: 26mm;
+                height: 26mm;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-left: 2mm;
+                z-index: 2;
+            }
+
+            .qr-code-section img {
+                max-width: 100%;
+                max-height: 100%;
+            }
+
+            .container,
+            #loading,
+            #error,
+            #dataTable_wrapper {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="text-center my-4">In đơn hàng</h1>
+        <div id="loading" class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Đang tải...</span>
+            </div>
+            <p>Đang tải dữ liệu...</p>
+        </div>
+        <div id="error" class="alert alert-danger" style="display: none;" role="alert"></div>
+        <button id="printSelectedBtn" class="btn btn-success mb-3" style="display: none;">In các mục đã chọn</button>
+        <div class="table-responsive">
+            <table id="dataTable" class="table table-striped table-bordered" style="width:100%; display: none;">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll"></th>
+                        <th>STT</th>
+                        <th>Đơn hàng</th>
+                        <th>Tên chi tiết</th>
+                        <th>Số file</th>
+                        <th>Số lượng</th>
+                        <th>Mã QR</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Dữ liệu sẽ được thêm vào đây bằng JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="printArea"></div>
+
+    <script>
+
+        // Vô hiệu hóa chuột phải
+        document.addEventListener('contextmenu', function (e) {
+            e.preventDefault();
+        }, false);
+
+        // Vô hiệu hóa phím tắt
+        document.onkeydown = function (e) {
+            // Vô hiệu hóa F12
+            if (e.keyCode == 123) {
+                return false;
+            }
+            // Vô hiệu hóa Ctrl+Shift+I
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) {
+                return false;
+            }
+            // Vô hiệu hóa Ctrl+Shift+J
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) {
+                return false;
+            }
+            // Vô hiệu hóa Ctrl+U
+            if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) {
+                return false;
+            }
+        };
+
+
+        const appId = 'ff5f3a03-3ec2-4425-9f75-3dbfebac72dd';
+        const accessKey = 'V2-1c1H9-mVpsC-17xOo-mcRcV-QnJFb-E8ajk-KXjze-2h2EE';
+        const region = 'www';
+
+        function apiRequest(tableName, action, data) {
+            const apiUrl = `https://${region}.appsheet.com/api/v2/apps/${appId}/tables/${tableName}/Action`;
+            return $.ajax({
+                url: apiUrl,
+                method: 'POST',
+                headers: {
+                    'ApplicationAccessKey': accessKey,
+                    'Content-Type': 'application/json'
+                },
+                data: JSON.stringify({
+                    Action: action,
+                    Properties: {
+                        Locale: 'vi-VN',
+                        Timezone: 'Asia/Ho_Chi_Minh'
+                    },
+                    ...data
+                })
+            });
+        }
+
+        let currentUser = { ho_va_ten: '', code: '' };
+
+        function getCurrentUserInfo() {
+            const urlParams = new URLSearchParams(window.location.search);
+            currentUser.ho_va_ten = urlParams.get('ho_va_ten') || '';
+            currentUser.code = urlParams.get('code') || '';
+
+            // Giải mã URL encoding cho ho_va_ten
+            currentUser.ho_va_ten = decodeURIComponent(currentUser.ho_va_ten);
+
+            console.log('Thông tin người dùng:', currentUser);
+            return Promise.resolve();
+        }
+
+        function loadData() {
+            showLoading();
+            getCurrentUserInfo();
+            apiRequest('in_qr_code', 'Find', { Rows: [], Properties: { Selector: 'Filter(in_qr_code, true)' } })
+                .then(data => {
+                    processData(data);
+                    hideLoading();
+                })
+                .catch(error => {
+                    console.error('Lỗi khi tải dữ liệu:', error);
+                    showError('Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại sau.');
+                    hideLoading();
+                });
+        }
+
+        function processData(data) {
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+
+            const filteredData = data.filter(item => item.order_kd && item.ten_chi_tiet);
+
+            filteredData.sort((a, b) => {
+                const aStt = parseInt(a.stt) || 0;
+                const bStt = parseInt(b.stt) || 0;
+                return aStt - bStt;
+            });
+
+            filteredData.forEach((item, index) => {
+                const row = tableBody.insertRow();
+                const cellCheckbox = row.insertCell(0);
+                const cellSTT = row.insertCell(1);
+                const cellOrder = row.insertCell(2);
+                const cellTenChiTiet = row.insertCell(3);
+                const cellSoFile = row.insertCell(4);
+                const cellSoLuong = row.insertCell(5);
+                const cellQRCode = row.insertCell(6);
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'row-checkbox';
+                cellCheckbox.appendChild(checkbox);
+
+                cellSTT.textContent = item.stt || (index + 1);
+                cellOrder.textContent = item.order_kd;
+                cellTenChiTiet.textContent = item.ten_chi_tiet;
+                cellSoFile.textContent = item.so_file;
+                cellSoLuong.textContent = item.sll;
+
+                const qrCodeDiv = document.createElement('div');
+                qrCodeDiv.className = 'qr-code';
+                cellQRCode.appendChild(qrCodeDiv);
+
+                const qrContent = `${item.order_kd}`;
+
+                new QRCode(qrCodeDiv, {
+                    text: qrContent,
+                    width: 80,
+                    height: 80
+                });
+            });
+
+            $('#dataTable').DataTable({
+                language: {
+                    url: 'https://cdn.datatables.net/plug-ins/1.11.5/i18n/vi.json'
+                },
+                columnDefs: [
+                    { orderable: false, targets: 0 },
+                    { type: 'num', targets: 1 }
+                ],
+                order: [[1, 'asc']],
+                pageLength: 10,
+                lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "Tất cả"]]
+            });
+
+            document.getElementById('dataTable').style.display = 'table';
+            document.getElementById('printSelectedBtn').style.display = 'inline-block';
+        }
+
+
+
+        function printSelectedLabels() {
+            const printArea = document.getElementById('printArea');
+            printArea.innerHTML = '';
+
+            const selectedItems = [];
+            document.querySelectorAll('.row-checkbox:checked').forEach(checkbox => {
+                const row = checkbox.closest('tr');
+                const orderKd = row.cells[2].textContent;
+                const tenChiTiet = row.cells[3].textContent;
+                const soLuong = row.cells[5].textContent;
+                const soFile = row.cells[4].textContent;
+                selectedItems.push({ order_kd: orderKd, ten_chi_tiet: tenChiTiet, so_luong: soLuong, so_file: soFile });
+            });
+
+            console.log(`Số lượng nhãn đã chọn: ${selectedItems.length}`);
+
+            selectedItems.forEach((item, index) => {
+                const printLabel = document.createElement('div');
+                printLabel.className = 'print-label';
+
+                const infoSection = document.createElement('div');
+                infoSection.className = 'info-section';
+                infoSection.innerHTML = `
+            <div ><span class="info-row lon">${item.ten_chi_tiet}</span> <span class="info-row small">(${item.so_file})</span></div>
+            <div class="info-row">Order Bus:${item.order_kd}</div>
+            <div class="info-row">Qty:${item.so_luong} </div>
+        `;
+
+                const qrCodeSection = document.createElement('div');
+                qrCodeSection.className = 'qr-code-section';
+                qrCodeSection.id = `printQRCode_${item.order_kd}_${index}`;
+
+                printLabel.appendChild(infoSection);
+                printLabel.appendChild(qrCodeSection);
+                printArea.appendChild(printLabel);
+
+                new QRCode(qrCodeSection, {
+                    text: item.order_kd,
+                    width: 90,
+                    height: 90,
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            });
+
+            console.log(`Số lượng nhãn đã tạo: ${printArea.children.length}`);
+
+            setTimeout(() => {
+                window.print();
+            }, 1000);
+        }
+
+        function getCurrentDate() {
+            const now = new Date();
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = String(now.getFullYear()).slice(-2);
+            return `${day}/${month}/${year}`;
+        }
+
+        function getCurrentTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+
+        function setupPrintButton() {
+            const printButton = document.getElementById('printSelectedBtn');
+            printButton.addEventListener('click', () => {
+                const selectedCount = document.querySelectorAll('.row-checkbox:checked').length;
+                console.log(`Số lượng nhãn đã chọn: ${selectedCount}`);
+                if (selectedCount === 0) {
+                    alert('Vui lòng chọn ít nhất một nhãn để in.');
+                } else {
+                    printSelectedLabels();
+                }
+            });
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('dataTable').style.display = 'none';
+            document.getElementById('printSelectedBtn').style.display = 'none';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        window.onload = () => {
+            loadData();
+            setupPrintButton();
+
+            document.getElementById('selectAll').addEventListener('change', function () {
+                const isChecked = this.checked;
+                document.querySelectorAll('.row-checkbox').forEach(checkbox => {
+                    checkbox.checked = isChecked;
+                });
+            });
+        };
+    </script>
+</body>
+
+</html>
