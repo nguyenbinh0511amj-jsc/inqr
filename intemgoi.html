@@ -118,12 +118,16 @@
                 padding: 0;
                 box-sizing: border-box;
             }
+
+            .sticky-container,
+            .sticky-header,
+            .sticky-pagination {
+                position: static;
+                border: none;
+            }
         }
 
         @media screen and (max-width: 768px) {
-            .container {
-                padding: 0.5rem !important;
-            }
 
             .table-responsive {
                 overflow-x: auto;
@@ -183,8 +187,47 @@
                 text-align: center;
                 white-space: nowrap;
             }
+
+            .sticky-pagination {
+                top: 160px;
+            }
         }
 
+        /* Sticky styles */
+        .sticky-container {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background-color: #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            background-color: white;
+            padding: 1rem;
+        }
+
+        .sticky-pagination {
+            position: sticky;
+            top: 100px;
+            z-index: 30;
+            background-color: white;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .content-wrapper {
+            padding-top: 1rem;
+        }
+
+        .spacing-buffer {
+            height: 1px;
+            background: transparent;
+        }
+
+        /* Pagination styles */
         .pagination-container {
             display: flex;
             justify-content: center;
@@ -229,35 +272,61 @@
 </head>
 
 <body class="bg-gray-100">
-    <div class="container mx-auto px-4 py-4 max-w-7xl no-print">
-        <div class="flex flex-col md:flex-row justify-center items-center gap-4 bg-white p-4 rounded-lg shadow no-print mobile-header">
-            <div class="flex flex-col md:flex-row gap-4 items-center w-full md:w-auto">
-                <div class="relative w-full md:w-64">
-                    <input type="text" id="searchInput" placeholder="Tìm kiếm..."
-                        class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <span class="absolute right-3 top-2.5 text-gray-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                        </svg>
-                    </span>
+    <div class="container mx-auto max-w-7xl no-print">
+        <!-- Sticky container for both header and pagination -->
+        <div class="sticky-container">
+            <!-- Sticky header -->
+            <div class="sticky-header">
+                <div
+                    class="flex flex-col md:flex-row justify-center items-center gap-4 bg-white p-4 rounded-lg shadow no-print mobile-header">
+                    <div class="flex flex-col md:flex-row gap-4 items-center w-full md:w-auto">
+                        <div class="relative w-full md:w-64">
+                            <input type="text" id="searchInput" placeholder="Tìm kiếm..."
+                                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <span class="absolute right-3 top-2.5 text-gray-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm text-gray-600">Hiển thị</label>
+                            <select id="rowsPerPage" class="border rounded px-2 py-1" onchange="changeRowsPerPage()">
+                                <option value="50">50</option>
+                                <option value="250">250</option>
+                                <option value="500">500</option>
+                                <option value="1000">1000</option>
+                                <option value="-1">Tất cả</option>
+                            </select>
+                            <span class="text-sm text-gray-600">dòng</span>
+                        </div>
+                        <button id="printSelectedButton" onclick="printSelectedOrders()"
+                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full md:w-auto">
+                            In đã chọn
+                        </button>
+                    </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <label class="text-sm text-gray-600">Hiển thị</label>
-                    <select id="rowsPerPage" class="border rounded px-2 py-1" onchange="changeRowsPerPage()">
-                        <option value="50">50</option>
-                        <option value="250">250</option>
-                        <option value="500">500</option>
-                        <option value="1000">1000</option>
-                        <option value="-1">Tất cả</option>
-                    </select>
-                    <span class="text-sm text-gray-600">dòng</span>
+            </div>
+
+            <!-- Spacing buffer -->
+            <!-- <div class="spacing-buffer"></div> -->
+
+            <!-- Sticky pagination -->
+            <div class="sticky-pagination">
+                <div class="px-4 pb-3 flex items-center justify-center border-gray-200 no-print bg-white">
+                    <div class="pagination-container">
+                        <div class="pagination-wrapper" id="pagination">
+                            <button class="pagination-button" onclick="goToPage('first')" id="firstPage">««</button>
+                            <button class="pagination-button" onclick="goToPage('prev')" id="prevPage">«</button>
+                            <div id="pageNumbers" class="flex gap-2"></div>
+                            <button class="pagination-button" onclick="goToPage('next')" id="nextPage">»</button>
+                            <button class="pagination-button" onclick="goToPage('last')" id="lastPage">»»</button>
+                        </div>
+                    </div>
                 </div>
-                <button id="printSelectedButton" onclick="printSelectedOrders()"
-                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full md:w-auto">
-                    In đã chọn
-                </button>
             </div>
         </div>
 
@@ -267,29 +336,6 @@
         </div>
 
         <div id="tableContainer" class="hidden print:block">
-
-            <!-- Pagination -->
-            <div class="px-4 py-3 flex items-center justify-center border-gray-200 no-print">
-                <div class="pagination-container">
-                    <div class="pagination-wrapper" id="pagination">
-                        <button class="pagination-button" onclick="goToPage('first')" id="firstPage">
-                            ««
-                        </button>
-                        <button class="pagination-button" onclick="goToPage('prev')" id="prevPage">
-                            «
-                        </button>
-                        <div id="pageNumbers" class="flex gap-2">
-                        </div>
-                        <button class="pagination-button" onclick="goToPage('next')" id="nextPage">
-                            »
-                        </button>
-                        <button class="pagination-button" onclick="goToPage('last')" id="lastPage">
-                            »»
-                        </button>
-                    </div>
-                </div>
-            </div>
-
             <div class="bg-white rounded-lg shadow-lg overflow-hidden print:shadow-none">
                 <div class="table-responsive">
                     <table class="min-w-full divide-y divide-gray-200 no-print">
@@ -309,16 +355,12 @@
                                 <th class="px-4 py-3 text-right text-xs uppercase tracking-wider w-20">
                                     SLL
                                 </th>
-                                <!-- <th class="px-4 py-3 text-center text-xs uppercase tracking-wider w-24">
-                                    QR Code
-                                </th> -->
                             </tr>
                         </thead>
                         <tbody id="orderTableBody" class="bg-white divide-y divide-gray-200">
                         </tbody>
                     </table>
                 </div>
-
             </div>
         </div>
 
@@ -574,8 +616,8 @@
                 `;
                 //dòng này ở trong row.innerHTML 
                 // <td class="px-4 py-3 whitespace-nowrap text-center">
-                    //     <div id="qr-${order.order_kd}" class="mx-auto qr-mobile w-16 h-16"></div>
-                    // </td>
+                //     <div id="qr-${order.order_kd}" class="mx-auto qr-mobile w-16 h-16"></div>
+                // </td>
 
                 tableBody.appendChild(row);
 
