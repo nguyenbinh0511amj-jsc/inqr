@@ -496,25 +496,27 @@
         }
 
         function createLabelHTML(order, quantity) {
+            // Sử dụng giá trị sl_tem_goi từ order, giữ nguyên 0 nếu là 0
+            const labelQuantity = order.sl_tem_goi === 0 ? 0 : (parseInt(order.sl_tem_goi) || 1);
             const unit = quantity === 1 ? 'PC' : 'PCS';
             return `
-                <div class="print-item">
-                    <div class="label-content">
-                        <div class="text-column">
-                            <table class="label-table">
-                                <tr>
-                                    <td class="table-cell left-cell text-center sizeso1" id="orderKd-${order.order_kd}">${order.order_kd}</td>
-                                    <td class="table-cell right-cell text-center auto-size" id="text-${order.order_kd}">${order.ten_chi_tiet}</td>
-                                </tr>
-                                <tr>
-                                    <td class="table-cell left-cell text-center sizeso2">Số lượng</td>
-                                    <td class="table-cell right-cell text-center sizeso3">${quantity} ${unit}</td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
+        <div class="print-item">
+            <div class="label-content">
+                <div class="text-column">
+                    <table class="label-table">
+                        <tr>
+                            <td class="table-cell left-cell text-center sizeso1" id="orderKd-${order.order_kd}">${order.order_kd}</td>
+                            <td class="table-cell right-cell text-center auto-size" id="text-${order.order_kd}">${order.ten_chi_tiet}</td>
+                        </tr>
+                        <tr>
+                            <td class="table-cell left-cell text-center sizeso2">Số lượng</td>
+                            <td class="table-cell right-cell text-center sizeso3">${quantity} ${unit}</td>
+                        </tr>
+                    </table>
                 </div>
-            `;
+            </div>
+        </div>
+    `;
         }
 
         async function printSelectedOrders() {
@@ -534,29 +536,33 @@
                 printPage.className = 'print-page';
 
                 const totalQuantity = parseInt(order.sll);
-                const labelQuantity = parseInt(order.sl_tem_goi) || 1;
+                // Nếu sl_tem_goi là null, undefined hoặc 0 thì giữ là 0
+                const labelQuantity = order.sl_tem_goi ? parseInt(order.sl_tem_goi) : 0;
 
                 let currentRow = '';
                 let labelsHTML = '';
 
-                for (let i = 0; i < Math.floor(totalQuantity / labelQuantity); i++) {
-                    currentRow += createLabelHTML(order, labelQuantity);
+                // Chỉ tạo label khi labelQuantity > 0
+                if (labelQuantity > 0) {
+                    for (let i = 0; i < Math.floor(totalQuantity / labelQuantity); i++) {
+                        currentRow += createLabelHTML(order, labelQuantity);
 
-                    if ((i + 1) % 4 === 0) {
+                        if ((i + 1) % 4 === 0) {
+                            labelsHTML += `<div class="print-row">${currentRow}</div>`;
+                            currentRow = '';
+                        }
+                    }
+
+                    if (totalQuantity % labelQuantity > 0) {
+                        currentRow += createLabelHTML(order, totalQuantity % labelQuantity);
+                    }
+
+                    if (currentRow) {
+                        while (currentRow.split('print-item').length - 1 < 4) {
+                            currentRow += `<div class="print-item" style="visibility: hidden;"></div>`;
+                        }
                         labelsHTML += `<div class="print-row">${currentRow}</div>`;
-                        currentRow = '';
                     }
-                }
-
-                if (totalQuantity % labelQuantity > 0) {
-                    currentRow += createLabelHTML(order, totalQuantity % labelQuantity);
-                }
-
-                if (currentRow) {
-                    while (currentRow.split('print-item').length - 1 < 4) {
-                        currentRow += `<div class="print-item" style="visibility: hidden;"></div>`;
-                    }
-                    labelsHTML += `<div class="print-row">${currentRow}</div>`;
                 }
 
                 printPage.innerHTML = labelsHTML;
@@ -609,6 +615,7 @@
                     <td class="px-4 py-3 whitespace-nowrap">
                         <span class="text-sm text-gray-500">${order.ten_chi_tiet || ''}</span>
                     </td>
+                     
                     <td class="px-4 py-3 whitespace-nowrap text-right">
                         <span class="text-sm text-gray-500">${order.sll || '0'}</span>
                     </td>
