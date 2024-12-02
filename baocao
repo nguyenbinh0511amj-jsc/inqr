@@ -1,0 +1,1729 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo Cáo Kho</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <style>
+        @media (max-width: 768px) {
+            .table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
+        .filter-panel {
+            transition: all 0.3s ease-in-out;
+            backdrop-filter: blur(10px);
+        }
+
+        .filter-panel.hidden {
+            transform: translateX(-100%);
+        }
+
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .stat-card {
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #4F46E5 0%, #3B82F6 100%);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .table-row-hover:hover {
+            background-color: rgba(59, 130, 246, 0.05);
+        }
+
+        .table-bordered th,
+        .table-bordered td {
+            border: 1px solid #e5e7eb;
+        }
+
+        .pagination-btn {
+            padding: 0.5rem 1rem;
+            margin: 0 0.25rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+            background-color: white;
+            color: #374151;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .pagination-btn:hover {
+            background-color: #f3f4f6;
+        }
+
+        .pagination-btn.active {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        .pagination-btn:disabled {
+            background-color: #f3f4f6;
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .resizable {
+            position: relative;
+        }
+
+        .resizer {
+            position: absolute;
+            right: 0;
+            top: 0;
+            height: 100%;
+            width: 5px;
+            background: rgba(0, 0, 0, 0.1);
+            cursor: col-resize;
+            user-select: none;
+            touch-action: none;
+        }
+
+        .resizer:hover,
+        .resizing {
+            background: #3b82f6;
+        }
+
+        .fixed-width {
+            width: 200px;
+            min-width: 200px;
+            max-width: 400px;
+        }
+
+        .expandable {
+            position: relative;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .expandable:hover {
+            overflow: visible;
+            white-space: normal;
+            z-index: 1;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Thêm/chỉnh sửa CSS cho bộ lọc ngày */
+        .flex.flex-wrap.gap-2 {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 0.5rem;
+            overflow-x: auto;
+            padding-bottom: 5px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        /* Cho phép hover để cuộn */
+        .flex.flex-wrap.gap-2:hover {
+            overflow-x: scroll;
+            cursor: pointer;
+        }
+
+        /* Ẩn thanh cuộn nhưng vẫn giữ chức năng cuộn */
+        .flex.flex-wrap.gap-2::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .flex.flex-wrap.gap-2::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        .flex.flex-wrap.gap-2::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        /* Điều chỉnh kích thước nút để vừa một dòng */
+        .date-preset-btn {
+            flex: 0 0 auto;
+            /* Không co giãn, giữ kích thước tự nhiên */
+            white-space: nowrap;
+            /* Ngăn text xuống dòng */
+            padding: 0.5rem 1rem;
+            /* Giảm padding để nút nhỏ hơn */
+            font-size: 0.875rem;
+            /* Giảm kích thước chữ nếu cần */
+        }
+
+        .date-preset-btn.active {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        /* Add these new styles */
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            background-color: rgb(249 250 251);
+            z-index: 40;
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .filter-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            overflow-y: auto;
+            transition: all 0.3s ease-in-out;
+            backdrop-filter: blur(10px);
+            z-index: 50;
+        }
+
+        /* Adjust main content padding to account for sticky header */
+        main {
+            padding-top: 0;
+        }
+
+        /* Ensure statistics cards appear below sticky header */
+        #statisticsDashboard {
+            margin-top: 1rem;
+        }
+
+        .table-header {
+            background-color: #F3F4F6;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+
+        .table-header:hover {
+            background-color: #E5E7EB;
+        }
+
+        .sort-icon {
+            display: inline-block;
+            margin-left: 4px;
+            font-size: 12px;
+        }
+
+        .sort-icon::after {
+            content: '↕️';
+        }
+
+        .sort-asc .sort-icon::after {
+            content: '↑';
+        }
+
+        .sort-desc .sort-icon::after {
+            content: '↓';
+        }
+
+        .table-header.active {
+            background-color: #E5E7EB;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+    <div id="loading" class="loading hidden">
+        <div class="flex flex-col items-center">
+            <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <div class="mt-4 text-lg font-medium text-blue-600">Đang tải dữ liệu...</div>
+        </div>
+    </div>
+
+    <!-- Filter Panel -->
+    <div id="filterPanel"
+        class="filter-panel fixed top-0 left-0 h-full w-full md:w-80 bg-white/95 shadow-lg z-50 overflow-y-auto hidden custom-scrollbar">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-800">Bộ lọc</h2>
+                <button onclick="toggleFilter()" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="space-y-6">
+                <!-- Date Range Picker -->
+                <div class="space-y-4">
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" data-range="today"
+                            class="date-preset-btn px-3 py-2 text-sm rounded-lg border transition-all hover:bg-blue-50">
+                            Hôm nay
+                        </button>
+                        <button type="button" data-range="yesterday"
+                            class="date-preset-btn px-3 py-2 text-sm rounded-lg border transition-all hover:bg-blue-50">
+                            Hôm qua
+                        </button>
+                        <button type="button" data-range="thisWeek"
+                            class="date-preset-btn px-3 py-2 text-sm rounded-lg border transition-all hover:bg-blue-50">
+                            Tuần này
+                        </button>
+                        <button type="button" data-range="lastWeek"
+                            class="date-preset-btn px-3 py-2 text-sm rounded-lg border transition-all hover:bg-blue-50">
+                            Tuần trước
+                        </button>
+                        <button type="button" data-range="thisMonth"
+                            class="date-preset-btn px-3 py-2 text-sm rounded-lg border transition-all hover:bg-blue-50">
+                            Tháng này
+                        </button>
+                        <button type="button" data-range="lastMonth"
+                            class="date-preset-btn px-3 py-2 text-sm rounded-lg border transition-all hover:bg-blue-50">
+                            Tháng trước
+                        </button>
+                        <button type="button" data-range="last30Days"
+                            class="date-preset-btn px-3 py-2 text-sm rounded-lg border transition-all hover:bg-blue-50">
+                            30 ngày qua
+                        </button>
+                        <button type="button" data-range="last90Days"
+                            class="date-preset-btn px-3 py-2 text-sm rounded-lg border transition-all hover:bg-blue-50">
+                            90 ngày qua
+                        </button>
+                    </div>
+
+                    <div class="relative">
+                        <button id="dateRangeBtn"
+                            class="w-full p-3 text-left border rounded-lg flex justify-between items-center hover:bg-gray-50 transition-all">
+                            <span id="dateRangeText">Chọn khoảng thời gian</span>
+                            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </button>
+
+                        <div id="dateRangePicker"
+                            class="hidden absolute left-0 right-0 mt-2 p-4 bg-white rounded-lg shadow-xl border z-50">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Từ ngày</label>
+                                    <input type="date" id="startDate"
+                                        class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Đến ngày</label>
+                                    <input type="date" id="endDate"
+                                        class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+                            </div>
+
+                            <div class="mt-4 flex justify-between items-center">
+                                <button type="button" id="clearDates" class="text-sm text-gray-600 hover:text-gray-900">
+                                    Xóa
+                                </button>
+                                <button type="button" id="applyDateRange"
+                                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                    Áp dụng
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="selectedDateRange" class="hidden">
+                        <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span id="selectedDateRangeText" class="text-sm text-blue-700"></span>
+                            </div>
+                            <button type="button" id="clearSelectedRange" class="text-blue-600 hover:text-blue-800">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search Section -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Tìm kiếm</label>
+                    <div class="relative">
+                        <input type="text" id="searchInput" placeholder="Tìm theo tên chi tiết hoặc mã order..."
+                            class="w-full p-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </span>
+                    </div>
+                    <!-- Search Results Count -->
+                    <div id="searchResultsCount" class="text-sm text-gray-600 hidden">
+                        Tìm thấy <span class="font-medium">0</span> kết quả
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
+                    <select id="statusFilter"
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                        <option value="all">Tất cả</option>
+                    </select>
+                </div>
+
+                <!-- Price Category Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Giá</label>
+                    <div class="relative">
+                        <button type="button" id="priceFilterBtn"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-left bg-white flex justify-between items-center">
+                            <span id="priceFilterText">Tất cả</span>
+                            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+
+                        <div id="priceDropdown"
+                            class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
+                            <div class="p-2 max-h-60 overflow-y-auto">
+                                <!-- Chọn tất cả -->
+                                <div class="flex items-center p-2 hover:bg-gray-50 rounded">
+                                    <input type="checkbox" id="selectAllPrices"
+                                        class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                    <label for="selectAllPrices" class="ml-2 text-sm text-gray-700">Chọn tất cả</label>
+                                </div>
+
+                                <div class="border-t my-2"></div>
+
+                                <!-- Container cho các checkbox giá -->
+                                <div id="priceOptions" class="space-y-1">
+                                    <!-- Các checkbox sẽ được thêm vào đây qua JavaScript -->
+                                </div>
+                            </div>
+
+                            <div class="border-t p-2 flex justify-end space-x-2">
+                                <button type="button" id="clearPrices"
+                                    class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 rounded">
+                                    Xóa chọn
+                                </button>
+                                <button type="button" id="applyPrices"
+                                    class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">
+                                    Áp dụng
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <!-- Reset Filter Button -->
+                    <button onclick="resetFilters()"
+                        class="w-full bg-gray-200 text-gray-800 py-3 rounded-lg hover:bg-gray-300 transition-colors">
+                        Đặt lại bộ lọc
+                    </button>
+
+                    <button onclick="applyFilters()"
+                        class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                        Áp dụng
+                    </button>
+
+                    <button onclick="exportReport()"
+                        class="w-full bg-gray-600 text-white py-3 rounded-lg hover:bg-gray-700 transition-colors">
+                        Xuất báo cáo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <main class="p-4 md:p-6 max-w-[1920px] mx-auto">
+        <div class="sticky-header">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <button onclick="toggleFilter()" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                    <h1 class="text-xl md:text-2xl font-bold text-gray-800">Báo Cáo Kho Nguồn</h1>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Dashboard -->
+        <div id="statisticsDashboard" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+            <div class="stat-card rounded-xl p-4 text-white shadow-lg">
+                <div class="text-sm font-medium opacity-90">Tổng số sản phẩm</div>
+                <div id="totalProducts" class="text-2xl font-bold mt-1">0</div>
+            </div>
+            <div class="stat-card rounded-xl p-4 text-white shadow-lg">
+                <div class="text-sm font-medium opacity-90">Tổng số lượng</div>
+                <div id="totalQuantity" class="text-2xl font-bold mt-1">0</div>
+            </div>
+            <div class="stat-card rounded-xl p-4 text-white shadow-lg">
+                <div class="text-sm font-medium opacity-90">Tổng nhập</div>
+                <div id="totalImport" class="text-2xl font-bold mt-1">0</div>
+            </div>
+            <div class="stat-card rounded-xl p-4 text-white shadow-lg">
+                <div class="text-sm font-medium opacity-90">Tổng xuất</div>
+                <div id="totalExport" class="text-2xl font-bold mt-1">0</div>
+            </div>
+            <div class="stat-card rounded-xl p-4 text-white shadow-lg">
+                <div class="text-sm font-medium opacity-90">Tổng tồn</div>
+                <div id="totalRemaining" class="text-2xl font-bold mt-1">0</div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="table-container custom-scrollbar">
+                <table class="w-full min-w-[1200px] table-bordered">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="table-header resizable sticky top-0 px-1 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-300"
+                                data-sort="order_kd">
+                                <div class="flex items-center">
+                                    ORDER KD
+                                    <span class="sort-icon ml-1"></span>
+                                </div>
+                                <div class="resizer" data-column="order_kd"></div>
+                            </th>
+                            <th class="table-header resizable sticky top-0 px-1 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-300"
+                                data-sort="ten_chi_tiet">
+                                <div class="flex items-center">
+                                    TÊN CHI TIẾT
+                                    <span class="sort-icon ml-1"></span>
+                                </div>
+                                <div class="resizer" data-column="ten_chi_tiet"></div>
+                            </th>
+                            <th class="table-header resizable sticky top-0 px-2 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-300"
+                                data-sort="so_file">
+                                <div class="flex items-center">
+                                    SỐ FILE
+                                    <span class="sort-icon ml-1"></span>
+                                </div>
+                                <div class="resizer" data-column="so_file"></div>
+                            </th>
+                            <th class="table-header resizable sticky top-0 px-2 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-300"
+                                data-sort="sll">
+                                <div class="flex items-center">
+                                    SLL
+                                    <span class="sort-icon ml-1"></span>
+                                </div>
+                                <div class="resizer" data-column="sll"></div>
+                            </th>
+                            <th class="table-header resizable sticky top-0 px-2 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-300"
+                                data-sort="so_goi">
+                                <div class="flex items-center">
+                                    SỐ GÓI
+                                    <span class="sort-icon ml-1"></span>
+                                </div>
+                                <div class="resizer" data-column="so_goi"></div>
+                            </th>
+                            <th class="table-header resizable sticky top-0 px-2 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-300"
+                                data-sort="thoi_han">
+                                <div class="flex items-center">
+                                    THỜI HẠN
+                                    <span class="sort-icon ml-1"></span>
+                                </div>
+                                <div class="resizer" data-column="thoi_han"></div>
+                            </th>
+                            <th class="table-header resizable sticky top-0 px-2 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-300"
+                                data-sort="ngay_nhap">
+                                <div class="flex items-center">
+                                    NGÀY NHẬP
+                                    <span class="sort-icon ml-1"></span>
+                                </div>
+                                <div class="resizer" data-column="ngay_nhap"></div>
+                            </th>
+                            <th class="table-header resizable fixed-width sticky top-0 px-2 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-300"
+                                data-sort="ten_thung">
+                                <div class="flex items-center">
+                                    TÊN THÙNG
+                                    <span class="sort-icon ml-1"></span>
+                                </div>
+                                <div class="resizer" data-column="ten_thung"></div>
+                            </th>
+                            <th class="table-header resizable sticky top-0 px-2 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-300"
+                                data-sort="ngay_xuat">
+                                <div class="flex items-center">
+                                    NGÀY XUẤT
+                                    <span class="sort-icon ml-1"></span>
+                                </div>
+                                <div class="resizer" data-column="ngay_xuat"></div>
+                            </th>
+                            <th class="table-header resizable sticky top-0 px-2 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-300"
+                                data-sort="code">
+                                <div class="flex items-center">
+                                    NGƯỜI TẠO
+                                    <span class="sort-icon ml-1"></span>
+                                </div>
+                                <div class="resizer" data-column="code"></div>
+                            </th>
+                            <th class="table-header resizable sticky top-0 px-2 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-300"
+                                data-sort="trang_thai">
+                                <div class="flex items-center">
+                                    TRẠNG THÁI
+                                    <span class="sort-icon ml-1"></span>
+                                </div>
+                                <div class="resizer" data-column="trang_thai"></div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTableBody" class="divide-y divide-gray-200">
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination controls -->
+            <div class="px-6 py-4 flex items-center justify-between border-t">
+                <div class="flex items-center">
+                    <label class="mr-2 text-sm text-gray-600">Hiển thị:</label>
+                    <select id="pageSizeSelect" class="border rounded p-1 text-sm">
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+                <div class="flex items-center space-x-2" id="paginationControls">
+                    <button class="pagination-btn" id="prevPage" disabled>Trước</button>
+                    <div id="pageNumbers" class="flex space-x-2"></div>
+                    <button class="pagination-btn" id="nextPage">Sau</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+
+        document.addEventListener('contextmenu', function (e) {
+            e.preventDefault();
+        }, false);
+
+        document.onkeydown = function (e) {
+            if (e.keyCode == 123) {
+                return false;
+            }
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) {
+                return false;
+            }
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) {
+                return false;
+            }
+            if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) {
+                return false;
+            }
+        };
+
+        // Configuration
+        const config = {
+            appId: '3dde1bbe-3569-43f3-b080-588415b70e64',
+            accessKey: 'V2-zmB9P-QPD6W-mjPs8-DOxLd-LiYyt-pTRXa-kUcni-NdDMq',
+            region: 'www'
+        };
+
+        // Variables
+        let currentPage = 1;
+        let pageSize = 10;
+        let totalPages = 0;
+        let currentData = [];
+        let filteredData = [];
+        let isResizing = false;
+        let currentResizer = null;
+        let initialX = 0;
+        let initialWidth = 0;
+        let currentDateRange = {
+            start: null,
+            end: null,
+            preset: null
+        };
+
+        // Loading indicator functions
+        function toggleLoading(show) {
+            document.getElementById('loading').classList.toggle('hidden', !show);
+        }
+
+        // Date Range Picker functions
+        function initializeDatePicker() {
+            const dateRangeBtn = document.getElementById('dateRangeBtn');
+            const dateRangePicker = document.getElementById('dateRangePicker');
+            const startDate = document.getElementById('startDate');
+            const endDate = document.getElementById('endDate');
+            const applyDateRange = document.getElementById('applyDateRange');
+            const clearDates = document.getElementById('clearDates');
+            const clearSelectedRange = document.getElementById('clearSelectedRange');
+
+            // Click bên ngoài để đóng date picker
+            document.addEventListener('click', (e) => {
+                if (!dateRangePicker.contains(e.target) && !dateRangeBtn.contains(e.target)) {
+                    dateRangePicker.classList.add('hidden');
+                }
+            });
+
+            // Toggle date picker
+            dateRangeBtn.addEventListener('click', () => {
+                dateRangePicker.classList.toggle('hidden');
+            });
+
+            // Xử lý các preset buttons
+            document.querySelectorAll('.date-preset-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Remove active class from all buttons
+                    document.querySelectorAll('.date-preset-btn').forEach(b =>
+                        b.classList.remove('active'));
+
+                    // Add active class to clicked button
+                    btn.classList.add('active');
+
+                    const range = btn.dataset.range;
+                    const dates = getPresetDates(range);
+                    setDateRange(dates.start, dates.end, range);
+                    applyFilters();
+                });
+            });
+
+            // Thêm đoạn code này vào phần script của bạn
+            document.querySelector('.flex.flex-wrap.gap-2').addEventListener('wheel', function (e) {
+                e.preventDefault();  // Ngăn cuộn dọc mặc định
+                this.scrollLeft += e.deltaY;  // Chuyển cuộn dọc thành cuộn ngang
+            });
+
+            // Apply custom date range
+            applyDateRange.addEventListener('click', () => {
+                if (startDate.value && endDate.value) {
+                    // Remove active class from all preset buttons when custom range is applied
+                    document.querySelectorAll('.date-preset-btn').forEach(btn =>
+                        btn.classList.remove('active'));
+
+                    setDateRange(new Date(startDate.value), new Date(endDate.value), 'custom');
+                    dateRangePicker.classList.add('hidden');
+                    applyFilters();
+                }
+            });
+
+            // Clear dates
+            clearDates.addEventListener('click', () => {
+                startDate.value = '';
+                endDate.value = '';
+            });
+
+            // Clear selected range
+            clearSelectedRange.addEventListener('click', () => {
+                // Remove active class from all preset buttons
+                document.querySelectorAll('.date-preset-btn').forEach(btn =>
+                    btn.classList.remove('active'));
+
+                clearDateRange();
+                applyFilters();
+            });
+
+            // Set default to "Hôm nay"
+            const todayBtn = document.querySelector('[data-range="today"]');
+            if (todayBtn) {
+                todayBtn.click();
+            }
+        }
+
+        function getPresetDates(preset) {
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+            switch (preset) {
+                case 'today':
+                    return {
+                        start: today,
+                        end: now
+                    };
+                case 'yesterday': {
+                    const yesterday = new Date(today);
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    return {
+                        start: yesterday,
+                        end: new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59)
+                    };
+                }
+                case 'thisWeek': {
+                    const weekStart = new Date(today);
+                    weekStart.setDate(today.getDate() - today.getDay());
+                    return {
+                        start: weekStart,
+                        end: now
+                    };
+                }
+                case 'lastWeek': {
+                    const lastWeekStart = new Date(today);
+                    lastWeekStart.setDate(today.getDate() - today.getDay() - 7);
+                    const lastWeekEnd = new Date(today);
+                    lastWeekEnd.setDate(today.getDate() - today.getDay() - 1);
+                    lastWeekEnd.setHours(23, 59, 59);
+                    return {
+                        start: lastWeekStart,
+                        end: lastWeekEnd
+                    };
+                }
+                case 'thisMonth':
+                    return {
+                        start: new Date(today.getFullYear(), today.getMonth(), 1),
+                        end: now
+                    };
+                case 'lastMonth': {
+                    const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                    const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59);
+                    return {
+                        start: lastMonthStart,
+                        end: lastMonthEnd
+                    };
+                }
+                case 'last30Days': {
+                    const thirtyDaysAgo = new Date(today);
+                    thirtyDaysAgo.setDate(today.getDate() - 30);
+                    return {
+                        start: thirtyDaysAgo,
+                        end: now
+                    };
+                }
+                case 'last90Days': {
+                    const ninetyDaysAgo = new Date(today);
+                    ninetyDaysAgo.setDate(today.getDate() - 90);
+                    return {
+                        start: ninetyDaysAgo,
+                        end: now
+                    };
+                }
+                default:
+                    return {
+                        start: null,
+                        end: null
+                    };
+            }
+        }
+
+        // Date Range Functions
+        function setDateRange(start, end, preset) {
+            currentDateRange = { start, end, preset };
+            updateDateRangeDisplay();
+        }
+
+        function clearDateRange() {
+            currentDateRange = { start: null, end: null, preset: null };
+            updateDateRangeDisplay();
+        }
+
+        function updateDateRangeDisplay() {
+            const selectedDateRange = document.getElementById('selectedDateRange');
+            const selectedDateRangeText = document.getElementById('selectedDateRangeText');
+            const dateRangeText = document.getElementById('dateRangeText');
+
+            if (currentDateRange.start && currentDateRange.end) {
+                const formatDate = (date) => {
+                    return date.toLocaleDateString('vi-VN', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    });
+                };
+
+                const rangeText = `${formatDate(currentDateRange.start)} - ${formatDate(currentDateRange.end)}`;
+                selectedDateRangeText.textContent = rangeText;
+                dateRangeText.textContent = rangeText;
+                selectedDateRange.classList.remove('hidden');
+            } else {
+                dateRangeText.textContent = 'Chọn khoảng thời gian';
+                selectedDateRange.classList.add('hidden');
+            }
+        }
+
+        // Statistics functions
+        function updateStatistics(data) {
+            const stats = {
+                totalProducts: new Set(data.map(item => item.ten_chi_tiet)).size,
+                totalQuantity: data.reduce((sum, item) => sum + (parseInt(item.sll) || 0), 0),
+                totalImport: data.reduce((sum, item) => {
+                    const ngayNhan = item.Ngay_nhap ? new Date(item.Ngay_nhap) : null;
+
+                    // Nếu có thời gian được chọn thì lọc theo thời gian
+                    if (currentDateRange.start && currentDateRange.end && ngayNhan) {
+                        if (ngayNhan >= currentDateRange.start && ngayNhan <= currentDateRange.end) {
+                            return sum + (parseInt(item.sll) || 0);
+                        }
+                        return sum;
+                    }
+
+                    // Nếu không có thời gian được chọn thì tính tất cả
+                    return sum + (parseInt(item.sll) || 0);
+                }, 0),
+                totalExport: data.reduce((sum, item) => {
+                    if (item.so_bien_ban_xuat && item.trang_thai === 'Đã xuất') {
+                        return sum + (parseInt(item.sll) || 0);
+                    }
+                    return sum;
+                }, 0),
+                totalRemaining: 0 // Sẽ được tính sau
+            };
+
+            // Cập nhật totalRemaining sau khi đã tính toàn bộ các giá trị khác
+            stats.totalRemaining = stats.totalQuantity - stats.totalExport;
+
+            // Animate số liệu thống kê
+            Object.keys(stats).forEach(key => {
+                const element = document.getElementById(key);
+                const value = stats[key];
+                animateNumber(element, value);
+            });
+        }
+
+        function animateNumber(element, target) {
+            const start = parseInt(element.textContent.replace(/,/g, '')) || 0;
+            const duration = 1000;
+            const steps = 20;
+            const increment = (target - start) / steps;
+            let current = start;
+            let step = 0;
+
+            const timer = setInterval(() => {
+                step++;
+                current += increment;
+                element.textContent = Math.round(current).toLocaleString();
+
+                if (step >= steps) {
+                    clearInterval(timer);
+                    element.textContent = target.toLocaleString();
+                }
+            }, duration / steps);
+        }
+
+        // Filter functions
+        function populateFilters() {
+            populateStatusFilter();
+            populatePriceFilter();
+        }
+
+        function populateStatusFilter() {
+            const statusFilter = document.getElementById('statusFilter');
+            const uniqueStatuses = [...new Set(currentData.map(item => item.trang_thai))].filter(Boolean);
+
+            statusFilter.innerHTML = '<option value="all">Tất cả</option>';
+            uniqueStatuses.forEach(status => {
+                const option = document.createElement('option');
+                option.value = status;
+                option.textContent = status;
+                statusFilter.appendChild(option);
+            });
+        }
+
+        // Thêm biến để lưu trữ giá đã chọn
+        let selectedPrices = new Set();
+
+        // Cập nhật hàm populatePriceFilter
+        function populatePriceFilter() {
+            const priceOptions = document.getElementById('priceOptions');
+            const uniquePrices = [...new Set(currentData.map(item => item.gia))]
+                .filter(Boolean)
+                .sort((a, b) => {
+                    // Trích xuất số từ chuỗi "Giá X"
+                    const numA = parseInt(a.replace('Giá ', ''));
+                    const numB = parseInt(b.replace('Giá ', ''));
+                    return numA - numB;
+                });
+
+            // Tạo các checkbox cho từng giá
+            priceOptions.innerHTML = uniquePrices.map(price => `
+        <div class="flex items-center p-2 hover:bg-gray-50 rounded">
+            <input type="checkbox" id="price-${price}" value="${price}" 
+                class="price-checkbox w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+            <label for="price-${price}" class="ml-2 text-sm text-gray-700">${price}</label>
+        </div>
+    `).join('');
+
+            setupPriceFilterEvents();
+        }
+
+        function setupPriceFilterEvents() {
+            const priceFilterBtn = document.getElementById('priceFilterBtn');
+            const priceDropdown = document.getElementById('priceDropdown');
+            const selectAllCheckbox = document.getElementById('selectAllPrices');
+            const clearBtn = document.getElementById('clearPrices');
+            const applyBtn = document.getElementById('applyPrices');
+            const priceCheckboxes = document.querySelectorAll('.price-checkbox');
+
+            // Toggle dropdown
+            priceFilterBtn.addEventListener('click', () => {
+                priceDropdown.classList.toggle('hidden');
+            });
+
+            // Đóng dropdown khi click bên ngoài
+            document.addEventListener('click', (e) => {
+                if (!priceDropdown.contains(e.target) && !priceFilterBtn.contains(e.target)) {
+                    priceDropdown.classList.add('hidden');
+                }
+            });
+
+            // Xử lý chọn tất cả
+            selectAllCheckbox.addEventListener('change', (e) => {
+                priceCheckboxes.forEach(checkbox => {
+                    checkbox.checked = e.target.checked;
+                    if (e.target.checked) {
+                        selectedPrices.add(checkbox.value);
+                    } else {
+                        selectedPrices.delete(checkbox.value);
+                    }
+                });
+                updatePriceFilterText();
+            });
+
+            // Xử lý từng checkbox
+            priceCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        selectedPrices.add(e.target.value);
+                    } else {
+                        selectedPrices.delete(e.target.value);
+                        selectAllCheckbox.checked = false;
+                    }
+                    updatePriceFilterText();
+                });
+            });
+
+            // Xử lý nút clear
+            clearBtn.addEventListener('click', () => {
+                selectedPrices.clear();
+                selectAllCheckbox.checked = false;
+                priceCheckboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                updatePriceFilterText();
+            });
+
+            // Xử lý nút apply
+            applyBtn.addEventListener('click', () => {
+                priceDropdown.classList.add('hidden');
+                applyFilters();
+            });
+        }
+
+        function updatePriceFilterText() {
+            const priceFilterText = document.getElementById('priceFilterText');
+            if (selectedPrices.size === 0) {
+                priceFilterText.textContent = 'Tất cả';
+            } else if (selectedPrices.size === 1) {
+                priceFilterText.textContent = [...selectedPrices][0];
+            } else {
+                priceFilterText.textContent = `${selectedPrices.size} giá đã chọn`;
+            }
+        }
+
+        // Add these variables at the top with other variables
+        let searchQuery = '';
+
+        // Hàm xử lý tìm kiếm riêng biệt
+        function handleSearch(query) {
+            searchQuery = query.toLowerCase().trim();
+
+            // Luôn tìm kiếm trên dữ liệu gốc đã được lọc bởi các bộ lọc khác
+            let baseData = [...currentData];
+
+            // Áp dụng các bộ lọc hiện tại
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            // Áp dụng bộ lọc ngày
+            if (currentDateRange.start && currentDateRange.end) {
+                baseData = baseData.filter(item => {
+                    const itemDate = new Date(item.Ngay_nhap);
+                    return itemDate >= currentDateRange.start && itemDate <= currentDateRange.end;
+                });
+            }
+
+            // Áp dụng bộ lọc trạng thái
+            if (statusFilter !== 'all') {
+                baseData = baseData.filter(item => item.trang_thai === statusFilter);
+            }
+
+            // Áp dụng bộ lọc giá
+            if (selectedPrices.size > 0) {
+                baseData = baseData.filter(item => selectedPrices.has(item.gia));
+            }
+
+            // Áp dụng tìm kiếm trên dữ liệu đã lọc
+            let searchResults = baseData;
+            if (searchQuery) {
+                searchResults = baseData.filter(item =>
+                    (item.ten_chi_tiet || '').toLowerCase().includes(searchQuery) ||
+                    (item.order_kd || '').toLowerCase().includes(searchQuery) ||
+                    (item.so_file || '').toString().toLowerCase().includes(searchQuery) ||
+                    (item.so_goi || '').toString().toLowerCase().includes(searchQuery) ||
+                    (item.ten_thung || '').toLowerCase().includes(searchQuery) ||
+                    (item.code || '').toLowerCase().includes(searchQuery)
+                );
+            }
+
+            // Cập nhật UI với kết quả tìm kiếm
+            const searchResultsCount = document.getElementById('searchResultsCount');
+            if (searchQuery) {
+                searchResultsCount.classList.remove('hidden');
+                searchResultsCount.querySelector('span').textContent = searchResults.length;
+            } else {
+                searchResultsCount.classList.add('hidden');
+            }
+
+            // Cập nhật table với kết quả tìm kiếm
+            filteredData = searchResults;
+            currentPage = 1;
+            updateTable();
+            updateStatistics(filteredData);
+        }
+
+        // Hàm áp dụng bộ lọc (không bao gồm tìm kiếm)
+        function applyFilters() {
+            // Get filter values
+            const statusFilter = document.getElementById('statusFilter').value;
+            const searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
+
+            // Bắt đầu từ currentData
+            let tempFilteredData = [...currentData];
+
+            // Áp dụng các bộ lọc theo thứ tự
+            if (currentDateRange.start && currentDateRange.end) {
+                tempFilteredData = tempFilteredData.filter(item => {
+                    const itemDate = new Date(item.Ngay_nhap);
+                    return itemDate >= currentDateRange.start && itemDate <= currentDateRange.end;
+                });
+            }
+
+            // Status filter
+            if (statusFilter !== 'all') {
+                tempFilteredData = tempFilteredData.filter(item => item.trang_thai === statusFilter);
+            }
+
+            // Price filter
+            if (selectedPrices.size > 0) {
+                tempFilteredData = tempFilteredData.filter(item => selectedPrices.has(item.gia));
+            }
+
+            // Cập nhật filteredData
+            filteredData = tempFilteredData;
+
+            // Áp dụng lại tìm kiếm nếu có
+            if (searchQuery) {
+                handleSearch(searchQuery);
+            } else {
+                // Reset to first page và cập nhật UI
+                currentPage = 1;
+                updateTable();
+                updateStatistics(filteredData);
+            }
+
+            // Đóng filter panel sau khi áp dụng
+            const panel = document.getElementById('filterPanel');
+            const overlay = document.getElementById('filterOverlay');
+            panel.classList.add('hidden');
+            if (overlay) {
+                overlay.remove();
+            }
+        }
+
+        // Khởi tạo search input với debounce
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('searchInput');
+            let searchTimeout;
+
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    handleSearch(e.target.value);
+                }, 300);
+            });
+        });
+
+        // Cập nhật document ready để loại bỏ click outside handler
+        document.addEventListener('DOMContentLoaded', () => {
+            // Remove any existing click outside handlers
+            document.removeEventListener('click', handleClickOutside);
+        });
+
+        function resetFilters() {
+            // Reset date range and remove active class from preset buttons
+            document.querySelectorAll('.date-preset-btn').forEach(btn =>
+                btn.classList.remove('active'));
+            clearDateRange();
+
+            // Reset status filter
+            document.getElementById('statusFilter').value = 'all';
+
+            // Reset price filter
+            selectedPrices.clear();
+            document.querySelectorAll('.price-checkbox').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            document.getElementById('selectAllPrices').checked = false;
+            updatePriceFilterText();
+
+            // Reset filter panel display
+            const dateRangeText = document.getElementById('dateRangeText');
+            if (dateRangeText) {
+                dateRangeText.textContent = 'Chọn khoảng thời gian';
+            }
+
+            const selectedDateRange = document.getElementById('selectedDateRange');
+            if (selectedDateRange) {
+                selectedDateRange.classList.add('hidden');
+            }
+
+            // Reset data and update display
+            currentDateRange = { start: null, end: null, preset: null };
+            filteredData = [...currentData];
+            currentPage = 1;
+
+            // Update UI
+            updateTable();
+            updateStatistics(filteredData);
+
+            // Close filter panel
+            const filterPanel = document.getElementById('filterPanel');
+            if (!filterPanel.classList.contains('hidden')) {
+                toggleFilter();
+            }
+        }
+
+        function toggleFilter() {
+            const panel = document.getElementById('filterPanel');
+            panel.classList.toggle('hidden');
+
+            let overlay = document.getElementById('filterOverlay');
+            if (!panel.classList.contains('hidden')) {
+                if (!overlay) {
+                    overlay = document.createElement('div');
+                    overlay.id = 'filterOverlay';
+                    overlay.className = 'fixed inset-0 bg-black bg-opacity-50 z-40';
+                    overlay.onclick = toggleFilter;
+                    document.body.appendChild(overlay);
+                }
+            } else if (overlay) {
+                overlay.remove();
+            }
+        }
+
+        // Table functions
+        function updateTable() {
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const paginatedData = filteredData.slice(startIndex, endIndex);
+
+            const tbody = document.getElementById('inventoryTableBody');
+            tbody.innerHTML = paginatedData.map(item => `
+            <tr class="table-row-hover transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap text-sm">${item.order_kd || ''}</td>
+                <td class="px-6 py-4 text-sm expandable">${item.ten_chi_tiet || ''}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">${item.so_file || ''}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">${item.sll || ''}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">${item.so_goi || ''}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">${item.thoi_han || ''}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">${formatDate(item.Ngay_nhap)}</td>
+                <td class="px-6 py-4 text-sm fixed-width expandable">${item.ten_thung || ''}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm hidden">${item.gia || ''}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">${formatDate(item.ngay_xuat)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">${item.code || ''}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-3 py-1 text-xs rounded-full font-medium ${getStatusClass(item.trang_thai)}">
+                        ${item.trang_thai || ''}
+                    </span>
+                </td>
+            </tr>
+        `).join('');
+
+            updatePagination();
+            initializeResizers();
+        }
+
+        // Pagination functions
+        function updatePagination() {
+            totalPages = Math.ceil(filteredData.length / pageSize);
+            const pageNumbers = document.getElementById('pageNumbers');
+            const prevBtn = document.getElementById('prevPage');
+            const nextBtn = document.getElementById('nextPage');
+
+            prevBtn.disabled = currentPage === 1;
+            nextBtn.disabled = currentPage === totalPages;
+
+            pageNumbers.innerHTML = '';
+            for (let i = 1; i <= totalPages; i++) {
+                if (
+                    i === 1 ||
+                    i === totalPages ||
+                    (i >= currentPage - 1 && i <= currentPage + 1)
+                ) {
+                    const btn = document.createElement('button');
+                    btn.className = `pagination-btn ${i === currentPage ? 'active' : ''}`;
+                    btn.textContent = i;
+                    btn.onclick = () => goToPage(i);
+                    pageNumbers.appendChild(btn);
+                } else if (
+                    (i === currentPage - 2 && currentPage > 3) ||
+                    (i === currentPage + 2 && currentPage < totalPages - 2)
+                ) {
+                    const dots = document.createElement('span');
+                    dots.className = 'px-2';
+                    dots.textContent = '...';
+                    pageNumbers.appendChild(dots);
+                }
+            }
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            updateTable();
+        }
+
+        // Column resize functions
+        function initializeResizers() {
+            const resizers = document.querySelectorAll('.resizer');
+            resizers.forEach(resizer => {
+                resizer.addEventListener('mousedown', initResize);
+                resizer.addEventListener('touchstart', initResize);
+            });
+        }
+
+        function initResize(e) {
+            isResizing = true;
+            currentResizer = e.target;
+            initialX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
+
+            const th = currentResizer.parentElement;
+            initialWidth = th.offsetWidth;
+
+            document.addEventListener('mousemove', resize);
+            document.addEventListener('touchmove', resize);
+            document.addEventListener('mouseup', stopResize);
+            document.addEventListener('touchend', stopResize);
+        }
+
+        function resize(e) {
+            if (!isResizing) return;
+
+            const currentX = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
+            const diff = currentX - initialX;
+            const newWidth = Math.max(100, initialWidth + diff);
+
+            const th = currentResizer.parentElement;
+            th.style.width = `${newWidth}px`;
+
+            const columnIndex = Array.from(th.parentElement.children).indexOf(th);
+            const table = th.closest('table');
+            const rows = table.querySelectorAll('tr');
+
+            rows.forEach(row => {
+                const cell = row.children[columnIndex];
+                if (cell) {
+                    cell.style.width = `${newWidth}px`;
+                }
+            });
+        }
+
+        function stopResize() {
+            isResizing = false;
+            currentResizer = null;
+            document.removeEventListener('mousemove', resize);
+            document.removeEventListener('touchmove', resize);
+            document.removeEventListener('mouseup', stopResize);
+            document.removeEventListener('touchend', stopResize);
+        }
+
+        // Utility functions
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('vi-VN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+        }
+
+        function getStatusClass(status) {
+            switch (status?.toLowerCase()) {
+                case 'đã xuất':
+                    return 'bg-red-100 text-red-800';
+                case 'đã nhận':
+                    return 'bg-blue-100 text-blue-800';
+                default:
+                    return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg ${type === 'error' ? 'bg-red-500' : 'bg-blue-500'} text-white z-50 animate-fadeIn`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.classList.add('animate-fadeOut');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Add SheetJS library to the HTML head
+        const excelScript = document.createElement('script');
+        excelScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+        document.head.appendChild(excelScript);
+
+        async function exportReport() {
+            toggleLoading(true);
+            try {
+                if (typeof XLSX === 'undefined') {
+                    await new Promise(resolve => excelScript.onload = resolve);
+                }
+
+                const wb = XLSX.utils.book_new();
+
+                // Sheet 1: Tổng hợp kho
+                const warehouseData = currentData.map(item => ({
+                    'STT': '',
+                    'Số BB nhận': item.so_bien_ban_nhap || '',
+                    'Số BB chuyển': item.so_bien_ban_chuyen_kho || '',
+                    'Số BB xuất': item.so_bien_ban_xuat || '',
+                    'Order KD': item.order_kd || '',
+                    'Tên chi tiết': item.ten_chi_tiet || '',
+                    'Số file': item.so_file || '',
+                    'SLL': item.sll || '',
+                    'Số gói': item.so_goi || '',
+                    'Thời hạn': item.thoi_han || '',
+                    'BBKT': item.bbkt || '',
+                    'Dấu bản vẽ': item.dong_dau_ban_ve || '',
+                    'Xác nhận RC': item.xac_nhan_tu_rc || '',
+                    'Ngày nhập': formatDate(item.Ngay_nhap) || '',
+                    'Thùng': item.ten_thung || '',
+                    'Ngày chuyển': formatDate(item.ngay_chuyen) || '',
+                    'Thùng chuyển': item.thung_chuyen || '',
+                    'Ngày xuất': formatDate(item.ngay_xuat) || '',
+                    'Code': item.code || '',
+                    'Check BBKT': item.check_bbkt || '',
+                    'Check đóng dấu': item.check_dau_ban_ve || '',
+                    'Check xác nhận RC': item.check_xac_nhan_tu_rc || '',
+                    'Trạng thái': item.trang_thai || '',
+                    'Ghi chú': item.ghi_chu || ''
+                }));
+
+                warehouseData.forEach((row, index) => {
+                    row.STT = index + 1;
+                });
+
+                const ws1 = XLSX.utils.json_to_sheet(warehouseData);
+
+                // Sheet 2: Tổng hợp đơn hàng đã nhận
+                const receivedOrders = currentData.filter(item => item.trang_thai === 'Đã nhận');
+
+                // Tạo map để đếm và theo dõi vị trí đầu tiên của mỗi ten_chi_tiet
+                const detailCounts = new Map(); // Đếm số lần xuất hiện
+                const firstOccurrence = new Map(); // Lưu vị trí xuất hiện đầu tiên
+
+                receivedOrders.forEach((item, index) => {
+                    const count = (detailCounts.get(item.ten_chi_tiet) || 0) + 1;
+                    detailCounts.set(item.ten_chi_tiet, count);
+
+                    // Chỉ lưu vị trí đầu tiên
+                    if (!firstOccurrence.has(item.ten_chi_tiet)) {
+                        firstOccurrence.set(item.ten_chi_tiet, index);
+                    }
+                });
+
+                const processedReceivedOrders = receivedOrders.map((item, currentIndex) => {
+                    // Chỉ hiện thị số lượng ở dòng đầu tiên của mỗi ten_chi_tiet
+                    const totalCount = detailCounts.get(item.ten_chi_tiet);
+                    const isFirstOccurrence = firstOccurrence.get(item.ten_chi_tiet) === currentIndex;
+
+                    return {
+                        'STT': '',
+                        'Tên chi tiết': item.ten_chi_tiet || '',
+                        'Số lượng sản phẩm': item.sll || '',
+                        'Số lượng đơn hàng': isFirstOccurrence ? totalCount.toString() : '',
+                        'Số lượng chi tiết': isFirstOccurrence ? '1' : '',
+                        'Ngày nhập': formatDate(item.Ngay_nhap) || ''
+                    };
+                });
+
+                processedReceivedOrders.forEach((row, index) => {
+                    row.STT = index + 1;
+                });
+
+                const ws2 = XLSX.utils.json_to_sheet(processedReceivedOrders);
+
+                // Sheet 3: Thống kê theo tháng
+                const monthlyStats = {};
+                currentData.forEach(item => {
+                    if (item.Ngay_nhap) {
+                        const date = new Date(item.Ngay_nhap);
+                        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+                        if (!monthlyStats[monthKey]) {
+                            monthlyStats[monthKey] = {
+                                'Tháng': `${date.getMonth() + 1}/${date.getFullYear()}`,
+                                'Tổng số lượng': 0,
+                                'Số đơn hàng': 0,
+                                'Số chi tiết': new Set()
+                            };
+                        }
+
+                        monthlyStats[monthKey]['Tổng số lượng'] += parseInt(item.sll) || 0;
+                        monthlyStats[monthKey]['Số đơn hàng']++;
+                        monthlyStats[monthKey]['Số chi tiết'].add(item.ten_chi_tiet);
+                    }
+                });
+
+                const monthlyData = Object.values(monthlyStats).map(stat => ({
+                    'Tháng': stat['Tháng'],
+                    'Tổng số lượng': stat['Tổng số lượng'],
+                    'Số đơn hàng': stat['Số đơn hàng'],
+                    'Số chi tiết': stat['Số chi tiết'].size
+                }));
+
+                const ws3 = XLSX.utils.json_to_sheet(monthlyData);
+
+                // Add sheets to workbook
+                XLSX.utils.book_append_sheet(wb, ws1, 'Tổng hợp kho');
+                XLSX.utils.book_append_sheet(wb, ws2, 'Tổng hợp đơn hàng đã nhận');
+                XLSX.utils.book_append_sheet(wb, ws3, 'Thống kê theo tháng');
+
+                // Auto-size columns for all sheets
+                const sheets = ['Tổng hợp kho', 'Tổng hợp đơn hàng đã nhận', 'Thống kê theo tháng'];
+                sheets.forEach(sheet => {
+                    const ws = wb.Sheets[sheet];
+                    const range = XLSX.utils.decode_range(ws['!ref']);
+                    for (let C = range.s.c; C <= range.e.c; ++C) {
+                        let max_width = 10;
+                        for (let R = range.s.r; R <= range.e.r; ++R) {
+                            const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+                            if (cell && cell.v) {
+                                const text = cell.v.toString();
+                                const width = text.length * 1.2;
+                                if (width > max_width) max_width = width;
+                            }
+                        }
+                        ws['!cols'] = ws['!cols'] || [];
+                        ws['!cols'][C] = { wch: max_width };
+                    }
+                });
+
+                XLSX.writeFile(wb, `Báo cáo kho ${formatDate(new Date())}.xlsx`);
+                showNotification('Xuất báo cáo thành công');
+            } catch (error) {
+                console.error('Error exporting report:', error);
+                showNotification('Có lỗi khi xuất báo cáo. Vui lòng thử lại.', 'error');
+            } finally {
+                toggleLoading(false);
+            }
+        }
+
+        // Initial page setup
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // Add click handler for apply filters button
+            const applyFiltersButton = document.querySelector('button[onclick="applyFilters()"]');
+            if (applyFiltersButton) {
+                applyFiltersButton.addEventListener('click', applyFilters);
+            }
+            // Initialize search functionality
+            const searchInput = document.getElementById('searchInput');
+            let searchTimeout;
+
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    handleSearch(e.target.value);
+                }, 300); // Debounce search for better performance
+            });
+
+            // Add search input clear when resetting filters
+            const originalResetFilters = resetFilters;
+            resetFilters = function () {
+                originalResetFilters();
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput) {
+                    searchInput.value = '';
+                    searchQuery = '';
+                }
+                document.getElementById('searchResultsCount').classList.add('hidden');
+            };
+            // Page size change handler
+            document.getElementById('pageSizeSelect').addEventListener('change', (e) => {
+                pageSize = parseInt(e.target.value);
+                currentPage = 1;
+                updateTable();
+            });
+
+            // Pagination navigation handlers
+            document.getElementById('prevPage').addEventListener('click', () => {
+                if (currentPage > 1) {
+                    goToPage(currentPage - 1);
+                }
+            });
+
+            document.getElementById('nextPage').addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    goToPage(currentPage + 1);
+                }
+            });
+
+            fetchInventoryData();
+            initializeResizers();
+        });
+
+        // Thêm logic xử lý sort
+        let currentSort = {
+            column: null,
+            direction: 'asc'
+        };
+
+        function initializeSort() {
+            const headers = document.querySelectorAll('.table-header');
+            headers.forEach(header => {
+                header.addEventListener('click', () => {
+                    const column = header.dataset.sort;
+
+                    // Reset all headers
+                    headers.forEach(h => {
+                        h.classList.remove('sort-asc', 'sort-desc');
+                    });
+
+                    if (currentSort.column === column) {
+                        // Toggle direction if clicking same column
+                        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        // New column, default to ascending
+                        currentSort.column = column;
+                        currentSort.direction = 'asc';
+                    }
+
+                    // Add sort class
+                    header.classList.add(`sort-${currentSort.direction}`);
+
+                    // Sort the data
+                    sortData();
+                });
+            });
+        }
+
+        function sortData() {
+            if (!currentSort.column) return;
+
+            filteredData.sort((a, b) => {
+                let valueA = a[currentSort.column] || '';
+                let valueB = b[currentSort.column] || '';
+
+                // Handle numeric columns
+                if (['so_file', 'sll', 'so_goi'].includes(currentSort.column)) {
+                    valueA = parseFloat(valueA) || 0;
+                    valueB = parseFloat(valueB) || 0;
+                }
+                // Handle date columns
+                else if (['ngay_nhap', 'ngay_xuat'].includes(currentSort.column)) {
+                    valueA = valueA ? new Date(valueA) : new Date(0);
+                    valueB = valueB ? new Date(valueB) : new Date(0);
+                }
+                // Handle string columns
+                else {
+                    valueA = valueA.toString().toLowerCase();
+                    valueB = valueB.toString().toLowerCase();
+                }
+
+                if (valueA < valueB) return currentSort.direction === 'asc' ? -1 : 1;
+                if (valueA > valueB) return currentSort.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            updateTable();
+        }
+
+        function initializePage() {
+            // Khởi tạo các giá trị mặc định
+            currentPage = 1;
+            pageSize = 10;
+
+            // Khởi tạo page size select
+            const pageSizeSelect = document.getElementById('pageSizeSelect');
+            if (pageSizeSelect) {
+                pageSizeSelect.value = pageSize;
+            }
+
+            // Cập nhật thống kê ban đầu
+            updateStatistics(currentData);
+            initializeSort();
+        }
+
+        // Data fetching
+        async function fetchInventoryData() {
+            toggleLoading(true);
+            try {
+                const response = await fetch(
+                    `https://${config.region}.appsheet.com/api/v2/apps/${config.appId}/tables/kho_nguon/Action`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'ApplicationAccessKey': config.accessKey,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            Action: 'Find',
+                            Properties: {},
+                            Selector: ''
+                        })
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                currentData = await response.json();
+                filteredData = [...currentData];
+
+                populateFilters();
+                initializePage();
+                initializeDatePicker();
+                updateTable();
+                updateStatistics(filteredData);
+            } catch (error) {
+                console.error('Failed to fetch data:', error);
+                showNotification('Lỗi khi tải dữ liệu. Vui lòng thử lại sau.', 'error');
+            } finally {
+                toggleLoading(false);
+            }
+        }
+    </script>
+</body>
+
+</html>
