@@ -495,7 +495,7 @@
                 <div id="totalQuantity" class="text-2xl font-bold mt-1">0</div>
             </div>
             <div class="stat-card rounded-xl p-4 text-white shadow-lg">
-                <div class="text-sm font-medium opacity-90">Tổng nhập</div>
+                <div class="text-sm font-medium opacity-90">Tổng đơn hàng</div>
                 <div id="totalImport" class="text-2xl font-bold mt-1">0</div>
             </div>
             <div class="stat-card rounded-xl p-4 text-white shadow-lg">
@@ -652,8 +652,8 @@
 
         // Configuration
         const config = {
-            appId: '3dde1bbe-3569-43f3-b080-588415b70e64',
-            accessKey: 'V2-zmB9P-QPD6W-mjPs8-DOxLd-LiYyt-pTRXa-kUcni-NdDMq',
+            appId: '36108a99-6538-47a3-9728-1259a0bd98df',
+            accessKey: 'V2-42Wj9-iT6wO-wMHPB-RB3FE-7o069-jIf4G-5hOAd-pZTIx',
             region: 'www'
         };
 
@@ -873,20 +873,7 @@
             const stats = {
                 totalProducts: new Set(data.map(item => item.ten_chi_tiet)).size,
                 totalQuantity: data.reduce((sum, item) => sum + (parseInt(item.sll) || 0), 0),
-                totalImport: data.reduce((sum, item) => {
-                    const ngayNhan = item.Ngay_nhap ? new Date(item.Ngay_nhap) : null;
-
-                    // Nếu có thời gian được chọn thì lọc theo thời gian
-                    if (currentDateRange.start && currentDateRange.end && ngayNhan) {
-                        if (ngayNhan >= currentDateRange.start && ngayNhan <= currentDateRange.end) {
-                            return sum + (parseInt(item.sll) || 0);
-                        }
-                        return sum;
-                    }
-
-                    // Nếu không có thời gian được chọn thì tính tất cả
-                    return sum + (parseInt(item.sll) || 0);
-                }, 0),
+                totalImport: new Set(data.map(item => item.order_kd)).size,
                 totalExport: data.reduce((sum, item) => {
                     if (item.so_bien_ban_xuat && item.trang_thai === 'Đã xuất') {
                         return sum + (parseInt(item.sll) || 0);
