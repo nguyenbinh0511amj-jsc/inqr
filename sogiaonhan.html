@@ -42,7 +42,6 @@
         }
 
         .title {
-            margin-top: 20px !important;
             color: blue;
             font-weight: bold;
             font-size: 36px;
@@ -60,7 +59,7 @@
             display: grid;
             grid-template-columns: 15% 35% 15% 35%;
             gap: 15px;
-            margin: 10px 0;
+            margin: 7px 0;
         }
 
         .qr-code {
@@ -81,7 +80,7 @@
             display: flex;
             flex-wrap: nowrap;
             gap: 5px;
-            margin-bottom: 10px;
+            margin: 10px 0 !important;
             align-items: center;
         }
 
@@ -125,8 +124,16 @@
             grid-column: span 2;
         }
 
+        .header_row {
+            border: 1px solid black;
+            padding: 6px;
+            text-align: center;
+            height: 50px;
+        }
+
         .notes {
-            line-height: 1;
+            margin-top: 5px;
+            line-height: 0.7;
         }
 
         .top-label {
@@ -197,6 +204,7 @@
         @media print {
             body * {
                 visibility: hidden;
+                padding: 0 !important;
             }
 
             #printArea,
@@ -208,6 +216,8 @@
                 position: absolute;
                 left: 0;
                 top: 0;
+                margin: 0 !important;
+                padding: 0 !important;
                 width: 100%;
             }
 
@@ -221,6 +231,23 @@
             .loading,
             .error {
                 display: none !important;
+            }
+
+            /* Loại bỏ padding và margin cho container khi in */
+            .containerin {
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+                max-width: none !important;
+                border-radius: 0 !important;
+            }
+
+            /* Loại bỏ padding và margin cho các phần tử bên trong */
+            .top-labels,
+            .info-section,
+            table{
+                margin: 0 !important;
+                padding: 0 !important;
             }
         }
 
@@ -556,24 +583,24 @@
 
     <script>
 
-        // document.addEventListener('contextmenu', function (e) {
-        //     e.preventDefault();
-        // }, false);
+        document.addEventListener('contextmenu', function (e) {
+            e.preventDefault();
+        }, false);
 
-        // document.onkeydown = function (e) {
-        //     if (e.keyCode == 123) {
-        //         return false;
-        //     }
-        //     if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) {
-        //         return false;
-        //     }
-        //     if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) {
-        //         return false;
-        //     }
-        //     if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) {
-        //         return false;
-        //     }
-        // };
+        document.onkeydown = function (e) {
+            if (e.keyCode == 123) {
+                return false;
+            }
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) {
+                return false;
+            }
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) {
+                return false;
+            }
+            if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) {
+                return false;
+            }
+        };
 
         // Constants for AppSheet connection
         const appId = '04a82add-ca65-43d2-876d-5564d1e9d921';
@@ -893,21 +920,21 @@
                 <table>
                     <thead>
                         <tr>
-                            <th rowspan="2">Công việc</th>
-                            <th rowspan="2">Nhận hàng</th>
-                            <th rowspan="2">Tap ren</th>
-                            <th rowspan="2">Làm via</th>
-                            <th colspan="2">Làm sạch</th>
-                            <th rowspan="2">Kiểm tra</th>
-                            <th rowspan="2">Đóng gói</th>
+                            <th rowspan="2" width="10%">Công việc</th>
+                            <th rowspan="2" width="9%">Nhận hàng</th>
+                            <th rowspan="2" width="15%">Tap ren</th>
+                            <th rowspan="2" width="14%">Làm via</th>
+                            <th colspan="2" width="24%">Làm sạch</th>
+                            <th rowspan="2" width="14%">Kiểm tra</th>
+                            <th rowspan="2" width="14%">Đóng gói</th>
                         </tr>
                         <tr>
-                            <th>Xì sp</th>
-                            <th>Lau sp</th>
+                            <th width="12%">Xì sp</th>
+                            <th width="12%">Lau sp</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
+                        <tr class="header_row">
                             <td>Người làm</td>
                             <td></td>
                             <td>${tapRen}</td>
@@ -917,7 +944,7 @@
                             <td></td>
                             <td></td>
                         </tr>
-                        <tr>
+                        <tr class="header_row">
                             <td>Số lượng OK</td>
                             <td></td>
                             <td>${phayRen}</td>
@@ -927,7 +954,7 @@
                             <td></td>
                             <td></td>
                         </tr>
-                        <tr>
+                        <tr class="header_row">
                             <td>Số lượng trả lại</td>
                             <td></td>
                             <td></td>
