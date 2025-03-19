@@ -245,7 +245,7 @@
             /* Loại bỏ padding và margin cho các phần tử bên trong */
             .top-labels,
             .info-section,
-            table{
+            table {
                 margin: 0 !important;
                 padding: 0 !important;
             }
@@ -1068,6 +1068,14 @@
 
             if (ten_chi_tiet === "950240591") {
                 note7 = "XLBM: phải hoàn thiện đánh bóng trước khi Anode => XN thực hiện:";
+            } else if (ten_chi_tiet === "1A-PT7039313" || ten_chi_tiet === "1A-1A-PT7039333" ||
+                ten_chi_tiet === "2A-PT7811312" || ten_chi_tiet === "2A-PT7811322" ||
+                ten_chi_tiet === "3A-CV5561210" || ten_chi_tiet === "3A-CV5561250" ||
+                ten_chi_tiet === "3A-CV5561260" || ten_chi_tiet === "3A-CV55612J0" ||
+                ten_chi_tiet === "3A-CV55612K0" || ten_chi_tiet === "3A-CV55612N0" ||
+                ten_chi_tiet === "3A-CV55612R0" || ten_chi_tiet === "3A-CV55612V0" ||
+                ten_chi_tiet === "3A-PT6623912" || ten_chi_tiet === "3A-PT6623922") {
+                note7 = "XLBM: phải hoàn thiện đánh bóng trước khi xuất hàng => XN thực hiện:";
             }
             formElement.querySelector('#note7').textContent = note7;
         }
