@@ -557,11 +557,11 @@
                     <thead>
                         <tr>
                             <th width="10%"><input type="checkbox" id="selectAll"></th>
+                            <th width="15%">File bản vẽ</th>
                             <th width="10%">STT</th>
                             <th width="25%">Order KD</th>
                             <th width="25%">Tên chi tiết</th>
                             <th width="15%">Số lượng</th>
-                            <th width="15%">File bản vẽ</th>
                         </tr>
                     </thead>
                 </table>
@@ -688,26 +688,14 @@
                 checkbox.setAttribute('data-order', item.order_kd);
                 cellCheckbox.appendChild(checkbox);
 
-                // STT - Đánh số từ 1 trở đi
-                const cellSTT = row.insertCell(1);
-                cellSTT.textContent = index + 1;
-
-                // Các cột khác như trước đây...
-                const cellOrder = row.insertCell(2);
-                cellOrder.textContent = item.order_kd;
-
-                const cellTenChiTiet = row.insertCell(3);
-                cellTenChiTiet.textContent = item.ten_chi_tiet;
-
-                const cellSoLuong = row.insertCell(4);
-                cellSoLuong.textContent = item.sll;
-
-                const cellTinhChat = row.insertCell(5);
-                if (item.file_ban_ve) {
+                // THAY ĐỔI: Lấy file_ban_ve từ dữ liệu sản phẩm
+                const cellTinhChat = row.insertCell(1);
+                const productData = productCache[item.ten_chi_tiet];
+                if (productData && productData.file_ban_ve) {
                     const fileLink = document.createElement('a');
                     fileLink.textContent = "In bản vẽ";
-                    const fileName = encodeURIComponent(item.file_ban_ve);
-                    fileLink.href = `https://www.appsheet.com/template/gettablefileurl?appName=App-AMJPKT2024-648353741-24-09-27&tableName=so_giao_nhan&fileName=${fileName}`;
+                    const fileName = encodeURIComponent(productData.file_ban_ve);
+                    fileLink.href = `https://www.appsheet.com/template/gettablefileurl?appName=App-AMJPKT2024-648353741-24-09-27&tableName=san_pham&fileName=${fileName}`;
                     fileLink.style.color = "blue";
                     fileLink.style.textDecoration = "underline";
                     fileLink.style.cursor = "pointer";
@@ -719,6 +707,22 @@
                 } else {
                     cellTinhChat.textContent = '';
                 }
+
+                // STT - Đánh số từ 1 trở đi
+                const cellSTT = row.insertCell(2);
+                cellSTT.textContent = index + 1;
+
+                // Các cột khác như trước đây...
+                const cellOrder = row.insertCell(3);
+                cellOrder.textContent = item.order_kd;
+
+                const cellTenChiTiet = row.insertCell(4);
+                cellTenChiTiet.textContent = item.ten_chi_tiet;
+
+                const cellSoLuong = row.insertCell(5);
+                cellSoLuong.textContent = item.sll;
+
+                
             });
 
             // Hủy DataTable cũ nếu đã tồn tại
@@ -747,24 +751,27 @@
                     },
                     {
                         data: null,
+                        render: function (data, type, row) {
+                            // THAY ĐỔI: Lấy file_ban_ve từ dữ liệu sản phẩm
+                            const productData = productCache[row.ten_chi_tiet];
+                            if (productData && productData.file_ban_ve) {
+                                return '<a href="https://www.appsheet.com/template/gettablefileurl?appName=App-AMJPKT2024-648353741-24-09-27&tableName=san_pham&fileName='
+                                    + encodeURIComponent(productData.file_ban_ve)
+                                    + '" style="color: blue; text-decoration: underline; cursor: pointer;" onclick="window.open(this.href, \'_blank\'); return false;">In bản vẽ</a>';
+                            }
+                            return '';
+                        }
+                    },
+                    {
+                        data: null,
                         render: function (data, type, row, meta) {
                             return meta.row + 1;
                         }
                     },
                     { data: 'order_kd' },
                     { data: 'ten_chi_tiet' },
-                    { data: 'sll' },
-                    {
-                        data: null,
-                        render: function (data, type, row) {
-                            if (row.file_ban_ve) {
-                                return '<a href="https://www.appsheet.com/template/gettablefileurl?appName=App-AMJPKT2024-648353741-24-09-27&tableName=so_giao_nhan&fileName='
-                                    + encodeURIComponent(row.file_ban_ve)
-                                    + '" style="color: blue; text-decoration: underline; cursor: pointer;" onclick="window.open(this.href, \'_blank\'); return false;">In bản vẽ</a>';
-                            }
-                            return '';
-                        }
-                    }
+                    { data: 'sll' }
+                    
                 ],
                 headerCallback: function (thead, data, start, end, display) {
                     $(thead).closest('thead').hide(); // Ẩn hoàn toàn thead
@@ -864,120 +871,120 @@
             }
 
             form.innerHTML = `
-                <div class="top-labels">
-                    <div class="top-label">
-                        <span style="text-decoration: underline;">Ưu tiên:</span> <span style="font-weight: bold;">${orderData.tinh_chat || ''}</span>
-                    </div>
-                    <div class="top-label">
-                        <span>Ghi chú: </span> <span style="font-weight: bold;">${orderData.ghi_chu || ''}</span>
-                    </div>
-                </div>
+               <div class="top-labels">
+                   <div class="top-label">
+                       <span style="text-decoration: underline;">Ưu tiên:</span> <span style="font-weight: bold;">${orderData.tinh_chat || ''}</span>
+                   </div>
+                   <div class="top-label">
+                       <span>Ghi chú: </span> <span style="font-weight: bold;">${orderData.ghi_chu || ''}</span>
+                   </div>
+               </div>
 
-                <div class="title">PHIẾU THEO DÕI TÌNH TRẠNG SẢN PHẨM</div>
+               <div class="title">PHIẾU THEO DÕI TÌNH TRẠNG SẢN PHẨM</div>
 
-                <div class="top-labels">
-                    <div class="info-section">
-                        <div class="info-label">Tên chi tiết:</div>
-                        <div class="info-value">${orderData.ten_chi_tiet || ''}</div>
-                        <div class="info-label">Vật liệu:</div>
-                        <div class="info-value">${productData ? (productData.vat_lieu || orderData.vat_lieu || '') : (orderData.vat_lieu || '')}</div>
+               <div class="top-labels">
+                   <div class="info-section">
+                       <div class="info-label">Tên chi tiết:</div>
+                       <div class="info-value">${orderData.ten_chi_tiet || ''}</div>
+                       <div class="info-label">Vật liệu:</div>
+                       <div class="info-value">${productData ? (productData.vat_lieu || orderData.vat_lieu || '') : (orderData.vat_lieu || '')}</div>
 
-                        <div class="info-label">Số Order:</div>
-                        <div class="info-value">${orderData.order_kd || ''}</div>
-                        <div class="info-label">Thời hạn:</div>
-                        <div class="info-value">${orderData.thoi_han || ''}</div>
+                       <div class="info-label">Số Order:</div>
+                       <div class="info-value">${orderData.order_kd || ''}</div>
+                       <div class="info-label">Thời hạn:</div>
+                       <div class="info-value">${orderData.thoi_han || ''}</div>
 
-                        <div class="info-label">Số lượng:</div>
-                        <div class="info-value">${orderData.sll || ''}</div>
-                        <div class="info-label">Xlbm:</div>
-                        <div class="info-value">${productData ? (productData.xlbm || orderData.xlbm || '') : (orderData.xlbm || '')}</div>
+                       <div class="info-label">Số lượng:</div>
+                       <div class="info-value">${orderData.sll || ''}</div>
+                       <div class="info-label">Xlbm:</div>
+                       <div class="info-value">${productData ? (productData.xlbm || orderData.xlbm || '') : (orderData.xlbm || '')}</div>
 
-                        <div class="info-label">File:</div>
-                        <div class="info-value">${orderData.so_file || ''}</div>
-                        <div class="info-label">Nơi G/c:</div>
-                        <div class="info-value">${orderData.noi_gia_cong || ''}</div>
+                       <div class="info-label">File:</div>
+                       <div class="info-value">${orderData.so_file || ''}</div>
+                       <div class="info-label">Nơi G/c:</div>
+                       <div class="info-value">${orderData.noi_gia_cong || ''}</div>
 
-                        <div class="info-label">Bề mặt:</div>
-                        <div class="info-value">${beMat}</div>
-                    </div>
+                       <div class="info-label">Bề mặt:</div>
+                       <div class="info-value">${beMat}</div>
+                   </div>
 
-                    <div class="qr-code" style="text-align: right; height: 150px; width: 150px;">
-                        <!-- QR Code sẽ được tạo bằng JavaScript -->
-                    </div>
-                </div>
+                   <div class="qr-code" style="text-align: right; height: 150px; width: 150px;">
+                       <!-- QR Code sẽ được tạo bằng JavaScript -->
+                   </div>
+               </div>
 
-                <div class="receipt-section">
-                    <div class="info-label">Ngày nhận:</div>
-                    <div class="info-value">${formatDate(orderData.ngay_nhan) || ''}</div>
-                    <div class="info-label">Giờ nhận:</div>
-                    <div class="info-value">${orderData.gio_nhan || ''}</div>
-                    <div class="info-label">Code:</div>
-                    <div class="info-value">${orderData.code || ''}</div>
-                    <div class="info-label">Người nhận:</div>
-                    <div class="info-value">${orderData.ho_va_ten || ''}</div>
-                </div>
+               <div class="receipt-section">
+                   <div class="info-label">Ngày nhận:</div>
+                   <div class="info-value">${formatDate(orderData.ngay_nhan) || ''}</div>
+                   <div class="info-label">Giờ nhận:</div>
+                   <div class="info-value">${orderData.gio_nhan || ''}</div>
+                   <div class="info-label">Code:</div>
+                   <div class="info-value">${orderData.code || ''}</div>
+                   <div class="info-label">Người nhận:</div>
+                   <div class="info-value">${orderData.ho_va_ten || ''}</div>
+               </div>
 
-                <table>
-                    <thead>
-                        <tr>
-                            <th rowspan="2" width="10%">Công việc</th>
-                            <th rowspan="2" width="9%">Nhận hàng</th>
-                            <th rowspan="2" width="15%">Tap ren</th>
-                            <th rowspan="2" width="14%">Làm via</th>
-                            <th colspan="2" width="24%">Làm sạch</th>
-                            <th rowspan="2" width="14%">Kiểm tra</th>
-                            <th rowspan="2" width="14%">Đóng gói</th>
-                        </tr>
-                        <tr>
-                            <th width="12%">Xì sp</th>
-                            <th width="12%">Lau sp</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr class="header_row">
-                            <td>Người làm</td>
-                            <td></td>
-                            <td>${tapRen}</td>
-                            <td>${gcBangTay}</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr class="header_row">
-                            <td>Số lượng OK</td>
-                            <td></td>
-                            <td>${phayRen}</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        <tr class="header_row">
-                            <td>Số lượng trả lại</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                    </tbody>
-                </table>
+               <table>
+                   <thead>
+                       <tr>
+                           <th rowspan="2" width="10%">Công việc</th>
+                           <th rowspan="2" width="9%">Nhận hàng</th>
+                           <th rowspan="2" width="15%">Tap ren</th>
+                           <th rowspan="2" width="14%">Làm via</th>
+                           <th colspan="2" width="24%">Làm sạch</th>
+                           <th rowspan="2" width="14%">Kiểm tra</th>
+                           <th rowspan="2" width="14%">Đóng gói</th>
+                       </tr>
+                       <tr>
+                           <th width="12%">Xì sp</th>
+                           <th width="12%">Lau sp</th>
+                       </tr>
+                   </thead>
+                   <tbody>
+                       <tr class="header_row">
+                           <td>Người làm</td>
+                           <td></td>
+                           <td>${tapRen}</td>
+                           <td>${gcBangTay}</td>
+                           <td></td>
+                           <td></td>
+                           <td></td>
+                           <td></td>
+                       </tr>
+                       <tr class="header_row">
+                           <td>Số lượng OK</td>
+                           <td></td>
+                           <td>${phayRen}</td>
+                           <td></td>
+                           <td></td>
+                           <td></td>
+                           <td></td>
+                           <td></td>
+                       </tr>
+                       <tr class="header_row">
+                           <td>Số lượng trả lại</td>
+                           <td></td>
+                           <td></td>
+                           <td></td>
+                           <td></td>
+                           <td></td>
+                           <td></td>
+                           <td></td>
+                       </tr>
+                   </tbody>
+               </table>
 
-                <div class="notes">
-                    <p><i style="text-decoration: underline;">Ghi chú:</i></p>
-                    <p style="font-weight: bold;" id="note1"></p>
-                    <p style="font-weight: bold;" id="note2"></p>
-                    <p style="font-weight: bold;" id="note3"></p>
-                    <p style="font-weight: bold;" id="note4"></p>
-                    <p><i style="font-weight: bold;" id="note5"></i></p>
-                    <p style="font-weight: bold;" id="note6"></p>
-                    <p style="font-weight: bold;" id="note7"></p>
-                </div>
-            `;
+               <div class="notes">
+                   <p><i style="text-decoration: underline;">Ghi chú:</i></p>
+                   <p style="font-weight: bold;" id="note1"></p>
+                   <p style="font-weight: bold;" id="note2"></p>
+                   <p style="font-weight: bold;" id="note3"></p>
+                   <p style="font-weight: bold;" id="note4"></p>
+                   <p><i style="font-weight: bold;" id="note5"></i></p>
+                   <p style="font-weight: bold;" id="note6"></p>
+                   <p style="font-weight: bold;" id="note7"></p>
+               </div>
+           `;
 
             // Xử lý các ghi chú sau khi tạo form
             if (productData) {
@@ -1061,7 +1068,7 @@
             }
             formElement.querySelector('#note6').textContent = note6;
 
-            // Trong hàm processNotes
+            // Note 7
             let note7 = '';
             // Lấy ten_chi_tiet từ orderData
             const ten_chi_tiet = orderData.ten_chi_tiet || '';
@@ -1190,40 +1197,6 @@
             }
         }
 
-        // Tải đồng thời cả hai bảng khi khởi tạo trang
-        async function initDataLoading() {
-            document.getElementById('loadingIndicator').style.display = 'block';
-
-            try {
-                // Tải song song cả đơn hàng và tất cả sản phẩm
-                const [orderData, productData] = await Promise.all([
-                    fetchBatchedOrders(),
-                    fetchAllProducts()
-                ]);
-
-                // Lưu dữ liệu vào bộ nhớ
-                allOrderData = orderData;
-
-                // Tạo cache sản phẩm từ dữ liệu đã tải
-                productData.forEach(product => {
-                    if (product.ten_chi_tiet) {
-                        productCache[product.ten_chi_tiet] = product;
-                    }
-                });
-
-                // Hiển thị dữ liệu đơn hàng
-                populateTable(allOrderData);
-
-                // Ẩn loading indicator
-                document.getElementById('loadingIndicator').style.display = 'none';
-            } catch (error) {
-                console.error('Lỗi khi tải dữ liệu:', error);
-                document.getElementById('loadingIndicator').style.display = 'none';
-                document.getElementById('errorMessage').style.display = 'block';
-                document.getElementById('errorMessage').textContent = 'Đã xảy ra lỗi: ' + error.message;
-            }
-        }
-
         // Hàm lấy tất cả sản phẩm từ bảng san_pham
         async function fetchAllProducts() {
             try {
@@ -1260,7 +1233,7 @@
             }
         }
 
-        // Sửa lại hàm initPage để tải từng phần
+        // Hàm khởi tạo trang - tải từng phần để tối ưu trải nghiệm người dùng
         async function initPage() {
             try {
                 document.getElementById('loadingIndicator').style.display = 'block';
@@ -1269,37 +1242,20 @@
                 const orderData = await fetchBatchedOrders();
                 allOrderData = orderData;
 
-                // Bước 2: Hiển thị bảng ngay lập tức
+                // Bước 2: Tải dữ liệu sản phẩm để có sẵn cache
+                document.getElementById('loadingIndicator').textContent = 'Đang tải dữ liệu sản phẩm...';
+                const productData = await fetchAllProducts();
+
+                // Tạo cache sản phẩm
+                productData.forEach(product => {
+                    if (product.ten_chi_tiet) {
+                        productCache[product.ten_chi_tiet] = product;
+                    }
+                });
+
+                // Bước 3: Hiển thị bảng sau khi đã có đầy đủ dữ liệu
                 populateTable(allOrderData);
                 document.getElementById('loadingIndicator').style.display = 'none';
-
-                // Bước 3: Tải dữ liệu sản phẩm trong nền và hiển thị thông báo
-                const loadingText = document.getElementById('loadingIndicator');
-                loadingText.textContent = 'Đang tải dữ liệu sản phẩm trong nền...';
-                loadingText.style.display = 'block';
-
-                // Sử dụng setTimeout để đảm bảo UI đã được cập nhật
-                setTimeout(async () => {
-                    try {
-                        // Tải dữ liệu sản phẩm
-                        const productData = await fetchAllProducts();
-
-                        // Tạo cache sản phẩm
-                        productData.forEach(product => {
-                            if (product.ten_chi_tiet) {
-                                productCache[product.ten_chi_tiet] = product;
-                            }
-                        });
-
-                        // Ẩn thông báo tải
-                        loadingText.style.display = 'none';
-                        console.log('Đã tải xong dữ liệu sản phẩm trong nền');
-                    } catch (error) {
-                        console.error('Lỗi khi tải dữ liệu sản phẩm:', error);
-                        loadingText.textContent = 'Đã tải bảng đơn hàng, đang tiếp tục tải dữ liệu sản phẩm...';
-                        loadingText.style.display = 'none';
-                    }
-                }, 100);
 
                 // Thiết lập sự kiện cho nút in
                 document.getElementById('printSelectedBtn').addEventListener('click', printSelectedForms);
@@ -1311,6 +1267,8 @@
                         checkbox.checked = isChecked;
                     });
                 });
+
+                console.log('Đã tải xong tất cả dữ liệu');
             } catch (error) {
                 console.error('Lỗi khởi tạo trang:', error);
                 document.getElementById('loadingIndicator').style.display = 'none';
