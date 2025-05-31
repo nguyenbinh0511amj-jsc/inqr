@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -44,6 +45,11 @@
                 padding: 0;
             }
 
+            /* Tem có dòng đánh bóng sẽ cao hơn */
+            .print-item.has-danh-bong {
+                height: 21mm;
+            }
+
             .label-content {
                 width: 100%;
                 height: 100%;
@@ -58,6 +64,22 @@
                 width: 100%;
                 height: 100%;
                 table-layout: fixed;
+            }
+
+            /* Cho tem bình thường (2 dòng) */
+            .label-table.normal tr {
+                height: 50%;
+            }
+
+            /* Cho tem có đánh bóng (3 dòng) */
+            .label-table.has-danh-bong tr:nth-child(1) {
+                height: 38%;
+            }
+            .label-table.has-danh-bong tr:nth-child(2) {
+                height: 38%;
+            }
+            .label-table.has-danh-bong tr:nth-child(3) {
+                height: 24%;
             }
 
             .sizeso1 {
@@ -107,6 +129,19 @@
             tr:first-child .table-cell {
                 border-bottom: 1px solid rgba(179, 176, 176, 0.911);
                 width: 100%;
+            }
+
+            tr:nth-child(2) .table-cell {
+                border-bottom: 1px solid rgba(179, 176, 176, 0.911);
+                width: 100%;
+            }
+
+            /* Style cho dòng đánh bóng */
+            .danh-bong-text {
+                font-size: 14px !important;
+                font-weight: bold;
+                white-space: nowrap;
+                height: 6.5mm;
             }
 
             .no-print {
@@ -268,6 +303,18 @@
             cursor: not-allowed;
             background-color: #edf2f7;
         }
+
+        /* Style cho indicator đánh bóng */
+        .danh-bong-indicator {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 2px 6px;
+            font-size: 10px;
+            background-color: #fee2e2;
+            color: #dc2626;
+            border-radius: 4px;
+            font-weight: bold;
+        }
     </style>
 </head>
 
@@ -310,9 +357,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Spacing buffer -->
-            <!-- <div class="spacing-buffer"></div> -->
 
             <!-- Sticky pagination -->
             <div class="sticky-pagination">
@@ -376,6 +420,7 @@
         let currentPage = 1;
         let itemsPerPage = 50;
         let filteredData = [];
+        let danhBongData = []; // Dữ liệu từ bảng chi_tiet_danh_bong
 
         function showLoading() {
             document.getElementById('loading').style.display = 'block';
@@ -496,27 +541,37 @@
         }
 
         function createLabelHTML(order, quantity) {
-            // Sử dụng giá trị sl_tem_goi từ order, giữ nguyên 0 nếu là 0
-            const labelQuantity = order.sl_tem_goi === 0 ? 0 : (parseInt(order.sl_tem_goi) || 1);
+            const labelQuantity = order.sll === 0 ? 0 : (parseInt(order.sll) || 1);
             const unit = quantity === 1 ? 'PC' : 'PCS';
+            
+            // Kiểm tra xem có trong danh sách đánh bóng không
+            const isDanhBong = danhBongData.includes(order.ten_chi_tiet);
+            
             return `
-        <div class="print-item">
-            <div class="label-content">
-                <div class="text-column">
-                    <table class="label-table">
-                        <tr>
-                            <td class="table-cell left-cell text-center sizeso1" id="orderKd-${order.order_kd}">${order.order_kd}</td>
-                            <td class="table-cell right-cell text-center auto-size" id="text-${order.order_kd}">${order.ten_chi_tiet}</td>
-                        </tr>
-                        <tr>
-                            <td class="table-cell left-cell text-center sizeso2">Số lượng</td>
-                            <td class="table-cell right-cell text-center sizeso3">${quantity} ${unit}</td>
-                        </tr>
-                    </table>
+                <div class="print-item ${isDanhBong ? 'has-danh-bong' : ''}">
+                    <div class="label-content">
+                        <div class="text-column">
+                            <table class="label-table ${isDanhBong ? 'has-danh-bong' : 'normal'}">
+                                <tr>
+                                    <td class="table-cell left-cell text-center sizeso1" id="orderKd-${order.order_kd}">${order.order_kd}</td>
+                                    <td class="table-cell right-cell text-center auto-size" id="text-${order.order_kd}">${order.ten_chi_tiet}</td>
+                                </tr>
+                                <tr>
+                                    <td class="table-cell left-cell text-center sizeso2">Số lượng</td>
+                                    <td class="table-cell right-cell text-center sizeso3">${quantity} ${unit}</td>
+                                </tr>
+                                ${isDanhBong ? `
+                                <tr>
+                                    <td colspan="2" class="table-cell text-center danh-bong-text">
+                                        HÀNG ĐÃ ĐÁNH BÓNG
+                                    </td>
+                                </tr>
+                                ` : ''}
+                            </table>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-    `;
+            `;
         }
 
         async function printSelectedOrders() {
@@ -536,13 +591,11 @@
                 printPage.className = 'print-page';
 
                 const totalQuantity = parseInt(order.sll);
-                // Nếu sl_tem_goi là null, undefined hoặc 0 thì giữ là 0
-                const labelQuantity = order.sl_tem_goi ? parseInt(order.sl_tem_goi) : 0;
+                const labelQuantity = order.sll ? parseInt(order.sll) : 0;
 
                 let currentRow = '';
                 let labelsHTML = '';
 
-                // Chỉ tạo label khi labelQuantity > 0
                 if (labelQuantity > 0) {
                     for (let i = 0; i < Math.floor(totalQuantity / labelQuantity); i++) {
                         currentRow += createLabelHTML(order, labelQuantity);
@@ -602,6 +655,9 @@
                 const row = document.createElement('tr');
                 row.className = index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100';
 
+                // Kiểm tra xem có trong danh sách đánh bóng không
+                const isDanhBong = danhBongData.includes(order.ten_chi_tiet);
+
                 row.innerHTML = `
                     <td class="px-4 py-3 text-center">
                         <input type="checkbox" class="orderCheckbox" data-order='${JSON.stringify(order)}' style="transform: scale(1.5);">
@@ -614,36 +670,23 @@
                     </td>
                     <td class="px-4 py-3 whitespace-nowrap">
                         <span class="text-sm text-gray-500">${order.ten_chi_tiet || ''}</span>
+                        ${isDanhBong ? '<span class="danh-bong-indicator">Đã đánh bóng</span>' : ''}
                     </td>
-                     
                     <td class="px-4 py-3 whitespace-nowrap text-right">
                         <span class="text-sm text-gray-500">${order.sll || '0'}</span>
                     </td>
-                    
                 `;
-                //dòng này ở trong row.innerHTML 
-                // <td class="px-4 py-3 whitespace-nowrap text-center">
-                //     <div id="qr-${order.order_kd}" class="mx-auto qr-mobile w-16 h-16"></div>
-                // </td>
 
                 tableBody.appendChild(row);
-
-                // new QRCode(document.getElementById(`qr-${order.order_kd}`), {
-                //     text: order.order_kd || '',
-                //     width: 64,
-                //     height: 64
-                // });
             });
 
             updatePaginationInfo(data);
         }
 
-        function loadData() {
-            showLoading();
-
-            const apiUrl = `https://${region}.appsheet.com/api/v2/apps/${appId}/tables/${tableName}/Action`;
-
-            fetch(apiUrl, {
+        function loadDanhBongData() {
+            const apiUrl = `https://${region}.appsheet.com/api/v2/apps/${appId}/tables/chi_tiet_danh_bong/Action`;
+            
+            return fetch(apiUrl, {
                 method: 'POST',
                 headers: {
                     'ApplicationAccessKey': accessKey,
@@ -657,21 +700,64 @@
                     }
                 })
             })
-                .then(response => response.json())
-                .then(data => {
-                    if (Array.isArray(data)) {
-                        data.reverse();
-                        originalData = data;
-                        filteredData = data;
-                        renderTable(data);
-                        hideLoading();
+            .then(response => response.json())
+            .then(data => {
+                if (Array.isArray(data)) {
+                    danhBongData = data.map(item => item.ten_chi_tiet);
+                    console.log('Loaded danh bong data:', danhBongData.length, 'items');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading danh bong data:', error);
+                danhBongData = []; // Đảm bảo danhBongData là array rỗng nếu có lỗi
+            });
+        }
+
+        function loadMainData() {
+            const apiUrl = `https://${region}.appsheet.com/api/v2/apps/${appId}/tables/${tableName}/Action`;
+
+            return fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'ApplicationAccessKey': accessKey,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    Action: 'Find',
+                    Properties: {
+                        Locale: 'vi-VN',
+                        Timezone: 'Asia/Ho_Chi_Minh'
                     }
                 })
-                .catch(error => {
-                    console.error('Error loading data:', error);
-                    hideLoading();
-                    alert('Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại sau.');
-                });
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (Array.isArray(data)) {
+                    data.reverse();
+                    originalData = data;
+                    filteredData = data;
+                    renderTable(data);
+                    console.log('Loaded main data:', data.length, 'items');
+                }
+            });
+        }
+
+        async function loadData() {
+            showLoading();
+            
+            try {
+                // Tải cả hai bảng song song
+                await Promise.all([
+                    loadDanhBongData(),
+                    loadMainData()
+                ]);
+                
+                hideLoading();
+            } catch (error) {
+                console.error('Error loading data:', error);
+                hideLoading();
+                alert('Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại sau.');
+            }
         }
 
         const debouncedFilter = debounce(() => filterTable(), 300);
