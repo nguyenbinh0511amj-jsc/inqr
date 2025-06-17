@@ -696,8 +696,10 @@
         function parseSheetData(values) {
             const headers = values[0];
             const data = [];
+            let skippedRows = [];
             
             console.log('📋 Headers found:', headers);
+            console.log('📊 Total rows (including header):', values.length);
             
             const columnMap = {
                 order_kd: 0,
@@ -717,68 +719,160 @@
                 trang_thai: 14,
                 update: 15
             };
-            
-            console.log('🔍 Looking for columns:', columnMap);
 
             for (let i = 1; i < values.length; i++) {
                 const row = values[i];
                 
-                if (row.length > 11) {
-                    const tenChiTiet = row[columnMap.ten_chi_tiet]?.toString().trim();
-                    const ngayNhan = row[columnMap.ngay_nhan]?.toString().trim();
-                    const slNhan = parseFloat(row[columnMap.sl_nhan]) || 0;
-                    
-                    console.log(`Row ${i}:`, { tenChiTiet, ngayNhan, slNhan });
-                    
-                    if (tenChiTiet && ngayNhan && slNhan > 0) {
-                        const date = parseDate(ngayNhan);
-                        if (date) {
-                            data.push({
-                                tenChiTiet,
-                                ngayNhan: date,
-                                slNhan,
-                                month: date.getMonth() + 1,
-                                year: date.getFullYear()
-                            });
-                        }
-                    }
+                // Check số cột
+                if (row.length <= 11) {
+                    skippedRows.push({
+                        row: i + 1,
+                        reason: `Không đủ cột (${row.length} cột, cần >11)`,
+                        data: row
+                    });
+                    continue;
                 }
+                
+                const tenChiTiet = row[columnMap.ten_chi_tiet]?.toString().trim();
+                const ngayNhan = row[columnMap.ngay_nhan]?.toString().trim();
+                const slNhan = parseFloat(row[columnMap.sl_nhan]) || 0;
+                
+                // Check từng điều kiện
+                if (!tenChiTiet) {
+                    skippedRows.push({
+                        row: i + 1,
+                        reason: 'Tên chi tiết trống',
+                        data: { tenChiTiet, ngayNhan, slNhan }
+                    });
+                    continue;
+                }
+                
+                if (!ngayNhan) {
+                    skippedRows.push({
+                        row: i + 1,
+                        reason: 'Ngày nhận trống',
+                        data: { tenChiTiet, ngayNhan, slNhan }
+                    });
+                    continue;
+                }
+                
+                if (slNhan <= 0) {
+                    skippedRows.push({
+                        row: i + 1,
+                        reason: `SL nhận không hợp lệ (${slNhan})`,
+                        data: { tenChiTiet, ngayNhan, slNhan }
+                    });
+                    continue;
+                }
+                
+                const date = parseDate(ngayNhan);
+                if (!date) {
+                    skippedRows.push({
+                        row: i + 1,
+                        reason: `Ngày không parse được: "${ngayNhan}"`,
+                        data: { tenChiTiet, ngayNhan, slNhan }
+                    });
+                    continue;
+                }
+                
+                // Nếu pass tất cả điều kiện
+                data.push({
+                    tenChiTiet,
+                    ngayNhan: date,
+                    slNhan,
+                    month: date.getMonth() + 1,
+                    year: date.getFullYear()
+                });
             }
             
+            // Log chi tiết các dòng bị bỏ qua
+            console.log('❌ Skipped rows:', skippedRows);
             console.log('✅ Parsed data:', data.length, 'rows');
+            console.log('📊 Total data rows in sheet:', values.length - 1);
+            console.log('🔍 Missing rows:', (values.length - 1) - data.length);
+            
+            // Hiển thị thông tin skip trong UI nếu có
+            if (skippedRows.length > 0) {
+                const skipInfo = skippedRows.map(skip => 
+                    `Dòng ${skip.row}: ${skip.reason}`
+                ).join('\n');
+                console.warn('⚠️ Chi tiết dòng bị bỏ qua:\n' + skipInfo);
+            }
+            
             return data;
         }
 
         function parseDate(dateStr) {
+            // Log để debug
+            console.log('🔍 Parsing date:', dateStr);
+            
             const formats = [
-                /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
-                /^(\d{4})-(\d{1,2})-(\d{1,2})$/,
-                /^(\d{1,2})-(\d{1,2})-(\d{4})$/,
+                /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, // dd/mm/yyyy hoặc d/m/yyyy
+                /^(\d{4})-(\d{1,2})-(\d{1,2})$/, // yyyy-mm-dd
+                /^(\d{1,2})-(\d{1,2})-(\d{4})$/, // dd-mm-yyyy
             ];
             
-            for (let format of formats) {
+            for (let formatIndex = 0; formatIndex < formats.length; formatIndex++) {
+                const format = formats[formatIndex];
                 const match = dateStr.match(format);
                 if (match) {
                     let day, month, year;
-                    if (format === formats[1]) {
+                    
+                    if (formatIndex === 1) { // yyyy-mm-dd
                         year = parseInt(match[1]);
                         month = parseInt(match[2]);
                         day = parseInt(match[3]);
-                    } else {
+                    } else { // dd/mm/yyyy or dd-mm-yyyy
                         day = parseInt(match[1]);
                         month = parseInt(match[2]);
                         year = parseInt(match[3]);
                     }
                     
+                    // Validate ranges
+                    if (year < 1900 || year > 2100) {
+                        console.log('❌ Invalid year:', year);
+                        continue;
+                    }
+                    if (month < 1 || month > 12) {
+                        console.log('❌ Invalid month:', month);
+                        continue;
+                    }
+                    if (day < 1 || day > 31) {
+                        console.log('❌ Invalid day:', day);
+                        continue;
+                    }
+                    
                     const date = new Date(year, month - 1, day);
-                    if (date.getFullYear() === year && date.getMonth() === month - 1) {
+                    
+                    // Kiểm tra date có hợp lệ không (tránh ngày như 31/02)
+                    if (date.getFullYear() === year && 
+                        date.getMonth() === month - 1 && 
+                        date.getDate() === day) {
+                        console.log('✅ Parsed successfully:', date);
                         return date;
+                    } else {
+                        console.log('❌ Invalid date combination:', { day, month, year });
                     }
                 }
             }
             
-            const date = new Date(dateStr);
-            return isNaN(date.getTime()) ? null : date;
+            // Thử Date constructor trực tiếp với các format khác
+            console.log('🔄 Trying direct Date constructor...');
+            const directFormats = [
+                dateStr, // Thử format gốc
+                dateStr.replace(/(\d{1,2})\/(\d{1,2})\/(\d{4})/, '$2/$1/$3'), // Chuyển dd/mm/yyyy thành mm/dd/yyyy cho Date constructor
+            ];
+            
+            for (let formatStr of directFormats) {
+                const date = new Date(formatStr);
+                if (!isNaN(date.getTime()) && date.getFullYear() > 1900) {
+                    console.log('✅ Direct parse successful:', date);
+                    return date;
+                }
+            }
+            
+            console.log('❌ Could not parse date:', dateStr);
+            return null;
         }
 
         function processData() {
@@ -842,7 +936,12 @@
         function displaySummaryCards() {
             const totalItems = processedData.length;
             const totalQuantity = processedData.reduce((sum, item) => sum + item.totalSlNhan, 0);
-            const uniqueItems = new Set(processedData.map(item => item.tenChiTiet)).size;
+            
+            // Đếm tổng số lần nhận (tất cả dòng trong bảng gốc)
+            const totalReceiveTimes = processedData.reduce((sum, item) => sum + (item.count || 1), 0);
+            
+            // Đếm số chi tiết unique từ rawData để đảm bảo không bị ảnh hưởng bởi filter
+            const uniqueItems = new Set(rawData.map(item => item.tenChiTiet)).size;
             
             const productTotals = {};
             processedData.forEach(item => {
@@ -860,15 +959,15 @@
             
             const summaryHTML = `
                 <div class="summary-card">
-                    <h4>Tổng số bản ghi</h4>
-                    <div class="value">${totalItems.toLocaleString()}</div>
+                    <h4>Tổng số lần nhận</h4>
+                    <div class="value">${totalReceiveTimes.toLocaleString()}</div>
                 </div>
                 <div class="summary-card">
                     <h4>Tổng số lượng</h4>
                     <div class="value">${totalQuantity.toLocaleString()}</div>
                 </div>
                 <div class="summary-card">
-                    <h4>Số mặt hàng</h4>
+                    <h4>Tổng số chi tiết</h4>
                     <div class="value">${uniqueItems.toLocaleString()}</div>
                 </div>
                 <div class="summary-card">
@@ -955,7 +1054,10 @@
             
             const avgPerMonth = Math.round(grandTotal / Object.keys(monthlyData).length);
             const totalItems = new Set(processedData.map(item => item.tenChiTiet)).size;
-            const totalRecords = processedData.length;
+            
+            // Tính tổng số lần nhận và TB/lệnh
+            const totalReceiveTimes = processedData.reduce((sum, item) => sum + (item.count || 1), 0);
+            const avgPerCommand = Math.round(grandTotal / totalReceiveTimes);
             
             const trendHTML = `
                 <div class="trend-item">
@@ -975,12 +1077,12 @@
                     <div class="trend-value">${totalItems.toLocaleString()}</div>
                 </div>
                 <div class="trend-item">
-                    <div class="trend-label">Tổng bản ghi:</div>
-                    <div class="trend-value">${totalRecords.toLocaleString()}</div>
+                    <div class="trend-label">Tổng số lần nhận:</div>
+                    <div class="trend-value">${totalReceiveTimes.toLocaleString()}</div>
                 </div>
                 <div class="trend-item">
-                    <div class="trend-label">TB SL/bản ghi:</div>
-                    <div class="trend-value">${Math.round(grandTotal / totalRecords)}</div>
+                    <div class="trend-label">TB/lệnh:</div>
+                    <div class="trend-value">${avgPerCommand.toLocaleString()}</div>
                 </div>
             `;
             
