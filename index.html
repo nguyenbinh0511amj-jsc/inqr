@@ -407,72 +407,115 @@
 
             try {
                 const timestamp = new Date().getTime();
-                const directUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/so_giao_nhan?key=${API_KEY}&_t=${timestamp}`;
                 
-                if (!isAutoSync) {
-                    console.log('🔗 Fetching from:', directUrl);
-                }
-                
-                const response = await fetch(directUrl, {
-                    cache: 'no-cache',
-                    headers: {
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache',
-                        'Expires': '0'
+                // Thử nhiều phương pháp kết nối
+                const methods = [
+                    // Phương pháp 1: CORS proxy
+                    {
+                        url: `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/so_giao_nhan?key=${API_KEY}&_t=${timestamp}`)}`,
+                        options: { cache: 'no-cache' }
+                    },
+                    // Phương pháp 2: Proxy khác
+                    {
+                        url: `https://cors-anywhere.herokuapp.com/https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/so_giao_nhan?key=${API_KEY}&_t=${timestamp}`,
+                        options: { 
+                            cache: 'no-cache',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        }
+                    },
+                    // Phương pháp 3: Trực tiếp
+                    {
+                        url: `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/so_giao_nhan?key=${API_KEY}&_t=${timestamp}`,
+                        options: {
+                            mode: 'cors',
+                            cache: 'no-cache',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Cache-Control': 'no-cache'
+                            }
+                        }
                     }
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`Lỗi API: ${response.status} - ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-                
-                if (!data.values || data.values.length < 2) {
-                    throw new Error('Không tìm thấy dữ liệu trong sheet');
-                }
+                ];
 
-                const newRawData = parseSheetData(data.values);
+                let lastError = null;
                 
-                if (newRawData.length === 0) {
-                    throw new Error('Không có dữ liệu hợp lệ để phân tích');
-                }
-                
-                const hasDataChanged = isAutoSync && (
-                    !rawData.length || 
-                    newRawData.length !== rawData.length ||
-                    JSON.stringify(newRawData.slice(-5)) !== JSON.stringify(rawData.slice(-5))
-                );
-                
-                rawData = newRawData;
-                processData();
-                displayResults();
-                populateYearFilter();
-                
-                lastSyncTime = new Date();
-                
-                if (isAutoSync && hasDataChanged) {
-                    showStatus(`🔄 Cập nhật mới: ${rawData.length} dòng (${lastSyncTime.toLocaleTimeString()})`, 'success');
-                    
-                    const summaryCards = document.getElementById('summaryCards');
-                    if (summaryCards) {
-                        summaryCards.style.animation = 'pulse 0.5s ease-in-out';
-                        setTimeout(() => {
-                            summaryCards.style.animation = '';
-                        }, 500);
+                for (let i = 0; i < methods.length; i++) {
+                    try {
+                        if (!isAutoSync) {
+                            console.log(`🔗 Trying method ${i + 1}:`, methods[i].url);
+                        }
+                        
+                        const response = await fetch(methods[i].url, methods[i].options);
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        
+                        const data = await response.json();
+                        
+                        if (!data.values || data.values.length < 2) {
+                            throw new Error('Không tìm thấy dữ liệu trong sheet');
+                        }
+
+                        const newRawData = parseSheetData(data.values);
+                        
+                        if (newRawData.length === 0) {
+                            throw new Error('Không có dữ liệu hợp lệ để phân tích');
+                        }
+                        
+                        const hasDataChanged = isAutoSync && (
+                            !rawData.length || 
+                            newRawData.length !== rawData.length ||
+                            JSON.stringify(newRawData.slice(-5)) !== JSON.stringify(rawData.slice(-5))
+                        );
+                        
+                        rawData = newRawData;
+                        processData();
+                        displayResults();
+                        populateYearFilter();
+                        
+                        lastSyncTime = new Date();
+                        
+                        if (isAutoSync && hasDataChanged) {
+                            showStatus(`🔄 Cập nhật mới: ${rawData.length} dòng (${lastSyncTime.toLocaleTimeString()})`, 'success');
+                            
+                            const summaryCards = document.getElementById('summaryCards');
+                            if (summaryCards) {
+                                summaryCards.style.animation = 'pulse 0.5s ease-in-out';
+                                setTimeout(() => {
+                                    summaryCards.style.animation = '';
+                                }, 500);
+                            }
+                            
+                            setTimeout(hideStatus, 2000);
+                        } else if (!isAutoSync) {
+                            showStatus(`✅ Đã tải thành công ${rawData.length} dòng dữ liệu (Phương pháp ${i + 1})`, 'success');
+                            setTimeout(hideStatus, 3000);
+                        }
+                        
+                        return; // Thành công, thoát khỏi vòng lặp
+                        
+                    } catch (error) {
+                        lastError = error;
+                        console.warn(`Method ${i + 1} failed:`, error.message);
+                        continue; // Thử phương pháp tiếp theo
                     }
-                    
-                    setTimeout(hideStatus, 2000);
-                } else if (!isAutoSync) {
-                    showStatus(`✅ Đã tải thành công ${rawData.length} dòng dữ liệu`, 'success');
-                    setTimeout(hideStatus, 3000);
                 }
+                
+                // Nếu tất cả phương pháp đều thất bại
+                throw new Error(`Tất cả phương pháp kết nối đều thất bại. Lỗi cuối: ${lastError?.message || 'Unknown error'}`);
 
             } catch (error) {
                 console.error('❌ Lỗi:', error);
                 
                 if (!isAutoSync) {
-                    showStatus(`❌ ${error.message}`, 'error');
+                    if (error.message.includes('fetch')) {
+                        showStatus('❌ Lỗi kết nối. Vui lòng kiểm tra:\n1. Kết nối internet\n2. Google Sheets có public không\n3. Thử lại sau vài giây', 'error');
+                    } else {
+                        showStatus(`❌ ${error.message}`, 'error');
+                    }
                 }
             } finally {
                 if (!isAutoSync) {
