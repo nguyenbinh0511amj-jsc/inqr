@@ -296,11 +296,6 @@
             </div>
             
             <div class="control-group">
-                <label for="apiKey">API Key:</label>
-                <input type="password" id="apiKey" placeholder="Nhập Google Sheets API Key" style="flex: 1;">
-            </div>
-            
-            <div class="control-group">
                 <label for="yearFilter">Năm:</label>
                 <select id="yearFilter">
                     <option value="">Tất cả các năm</option>
@@ -367,6 +362,9 @@
         let rawData = [];
         let processedData = [];
         let currentChart = null;
+        
+        // API Key được gán cố định
+        const API_KEY = "AIzaSyCrC_DfD_DrpjzjO5ENvqTMHBA4FIDBiP0";
 
         function showStatus(message, type = 'loading') {
             const status = document.getElementById('status');
@@ -394,10 +392,9 @@
 
         async function loadSheetData() {
             const sheetId = document.getElementById('sheetId').value.trim();
-            const apiKey = document.getElementById('apiKey').value.trim();
             
-            if (!sheetId || !apiKey) {
-                showStatus('Vui lòng nhập đầy đủ Sheet ID và API Key', 'error');
+            if (!sheetId) {
+                showStatus('Vui lòng nhập Sheet ID', 'error');
                 return;
             }
 
@@ -407,7 +404,7 @@
             try {
                 // Sử dụng CORS proxy để tránh lỗi CORS
                 const proxyUrl = 'https://api.allorigins.win/raw?url=';
-                const targetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/so_giao_nhan?key=${apiKey}`;
+                const targetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/so_giao_nhan?key=${API_KEY}`;
                 const finalUrl = proxyUrl + encodeURIComponent(targetUrl);
                 
                 console.log('🔗 Fetching from:', finalUrl);
@@ -446,7 +443,7 @@
                     showStatus('🔄 Thử phương pháp khác...', 'loading');
                     
                     try {
-                        const directUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/so_giao_nhan?key=${apiKey}`;
+                        const directUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/so_giao_nhan?key=${API_KEY}`;
                         const directResponse = await fetch(directUrl, {
                             mode: 'cors',
                             headers: {
@@ -895,13 +892,7 @@
             }
         }
 
-        // Enter key support for inputs
-        document.getElementById('apiKey').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                loadSheetData();
-            }
-        });
-
+        // Enter key support for input
         document.getElementById('sheetId').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 loadSheetData();
