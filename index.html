@@ -135,8 +135,8 @@
 
         .results {
             display: grid;
-            grid-template-columns: 400px 1fr;
-            gap: 30px;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
             margin-top: 30px;
         }
 
@@ -144,20 +144,27 @@
             .results {
                 grid-template-columns: 1fr;
             }
+            
+            .chart-container {
+                width: 100%;
+                max-width: 350px;
+                margin: 0 auto;
+            }
         }
 
         .chart-container {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 15px;
-            padding: 20px;
+            padding: 15px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.1);
             border: 1px solid rgba(255,255,255,0.2);
-            height: fit-content;
+            height: 250px;
+            width: 350px;
         }
 
         .chart-container canvas {
-            max-height: 300px !important;
+            max-height: 180px !important;
             width: 100% !important;
         }
 
@@ -172,8 +179,8 @@
 
         .chart-container h3, .table-container h3 {
             color: #4a5568;
-            margin-bottom: 15px;
-            font-size: 1.1rem;
+            margin-bottom: 10px;
+            font-size: 1rem;
             text-align: center;
         }
 
@@ -559,28 +566,35 @@
                 filteredData = filteredData.filter(item => item.month.toString() === monthFilter);
             }
             
-            // Nhóm dữ liệu theo tên chi tiết và tháng/năm
+            // Nhóm dữ liệu theo tên chi tiết và tháng/năm - GỘP CÙNG TÊN TRONG CÙNG THÁNG
             const grouped = {};
             
             filteredData.forEach(item => {
+                // Key chỉ dựa trên tên chi tiết + tháng/năm (không phân biệt ngày cụ thể)
                 const key = `${item.tenChiTiet}|${item.month}/${item.year}`;
+                
                 if (!grouped[key]) {
                     grouped[key] = {
                         tenChiTiet: item.tenChiTiet,
                         monthYear: `${item.month}/${item.year}`,
                         month: item.month,
                         year: item.year,
-                        totalSlNhan: 0
+                        totalSlNhan: 0,
+                        count: 0 // Đếm số lần xuất hiện
                     };
                 }
                 grouped[key].totalSlNhan += item.slNhan;
+                grouped[key].count += 1;
             });
             
+            // Chuyển về array và sắp xếp
             processedData = Object.values(grouped).sort((a, b) => {
                 if (a.year !== b.year) return b.year - a.year;
                 if (a.month !== b.month) return b.month - a.month;
                 return a.tenChiTiet.localeCompare(b.tenChiTiet);
             });
+            
+            console.log('📊 Processed data (grouped):', processedData);
         }
 
         function displayResults() {
@@ -627,7 +641,14 @@
                 const row = tbody.insertRow();
                 row.insertCell(0).textContent = item.tenChiTiet;
                 row.insertCell(1).textContent = item.monthYear;
-                row.insertCell(2).textContent = item.totalSlNhan.toLocaleString();
+                
+                // Hiển thị tổng số lượng và số lần xuất hiện (nếu > 1)
+                const slCell = row.insertCell(2);
+                if (item.count > 1) {
+                    slCell.innerHTML = `<strong>${item.totalSlNhan.toLocaleString()}</strong> <small style="color: #666;">(${item.count} lần)</small>`;
+                } else {
+                    slCell.textContent = item.totalSlNhan.toLocaleString();
+                }
             });
         }
 
@@ -689,8 +710,9 @@
                                     return value.toLocaleString();
                                 },
                                 font: {
-                                    size: 11
-                                }
+                                    size: 10
+                                },
+                                maxTicksLimit: 5
                             }
                         },
                         x: {
@@ -699,16 +721,19 @@
                             },
                             ticks: {
                                 font: {
-                                    size: 11
+                                    size: 10
                                 },
-                                maxRotation: 45
+                                maxRotation: 45,
+                                maxTicksLimit: 8
                             }
                         }
                     },
                     layout: {
                         padding: {
-                            top: 10,
-                            bottom: 10
+                            top: 5,
+                            bottom: 5,
+                            left: 5,
+                            right: 5
                         }
                     }
                 }
@@ -716,8 +741,8 @@
             
             // Set chart container height
             const chartContainer = document.querySelector('.chart-container');
-            chartContainer.style.height = '350px';
-            document.querySelector('.chart-container canvas').style.height = '280px';
+            chartContainer.style.height = '250px';
+            document.querySelector('.chart-container canvas').style.height = '180px';
         }
 
         function populateYearFilter() {
