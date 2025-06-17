@@ -245,7 +245,6 @@
 
         .chart-bar-fill {
             height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 11px;
             transition: width 0.8s ease-in-out;
             position: relative;
@@ -845,6 +844,21 @@
             const uniqueItems = new Set(processedData.map(item => item.tenChiTiet)).size;
             const uniqueMonths = new Set(processedData.map(item => item.monthYear)).size;
             
+            // Tìm sản phẩm có tổng số lượng nhận nhiều nhất
+            const productTotals = {};
+            processedData.forEach(item => {
+                if (!productTotals[item.tenChiTiet]) {
+                    productTotals[item.tenChiTiet] = 0;
+                }
+                productTotals[item.tenChiTiet] += item.totalSlNhan;
+            });
+            
+            const topProduct = Object.entries(productTotals)
+                .sort(([,a], [,b]) => b - a)[0];
+            
+            const topProductName = topProduct ? topProduct[0] : 'Không có';
+            const topProductQuantity = topProduct ? topProduct[1] : 0;
+            
             const summaryHTML = `
                 <div class="summary-card">
                     <h4>Tổng số bản ghi</h4>
@@ -859,8 +873,8 @@
                     <div class="value">${uniqueItems.toLocaleString()}</div>
                 </div>
                 <div class="summary-card">
-                    <h4>Số tháng</h4>
-                    <div class="value">${uniqueMonths.toLocaleString()}</div>
+                    <h4>Sản phẩm nhận nhiều nhất</h4>
+                    <div class="value" style="font-size: 1.2rem; line-height: 1.3;" title="${topProductName} (${topProductQuantity.toLocaleString()})">${topProductName.length > 20 ? topProductName.substring(0, 20) + '...' : topProductName}</div>
                 </div>
             `;
             
@@ -1451,12 +1465,15 @@
             const data = [
                 ['TOP 20 SẢN PHẨM THEO SỐ LƯỢNG'],
                 [''],
-                ['Hạng', 'Tên chi tiết', 'Tổng SL', 'Số tháng', 'Số lần', 'TB/tháng', 'TB/lần']
+                ['Hạng', 'Tên chi tiết', 'Tổng SL', 'Số tháng', 'Số lần', 'TB/tháng', 'TB/lần', '% so với tổng']
             ];
+            
+            const grandTotal = Object.values(itemTotals).reduce((sum, item) => sum + item.total, 0);
             
             sortedItems.forEach(([itemName, itemData], index) => {
                 const avgPerMonth = Math.round(itemData.total / itemData.months.size * 100) / 100;
                 const avgPerTime = Math.round(itemData.total / itemData.count * 100) / 100;
+                const percentage = Math.round(itemData.total / grandTotal * 10000) / 100;
                 
                 data.push([
                     index + 1,
@@ -1465,7 +1482,38 @@
                     itemData.months.size,
                     itemData.count,
                     avgPerMonth,
-                    avgPerTime
+                    avgPerTime,
+                    `${percentage}%`
+                ]);
+            });
+            
+            // Thêm khoảng trống cho biểu đồ
+            data.push([]);
+            data.push([]);
+            data.push(['BIỂU ĐỒ TỶ LỆ % TOP 20 SẢN PHẨM']);
+            data.push([]);
+            
+            // Tạo biểu đồ ASCII
+            const maxBarLength = 40;
+            const maxValue = sortedItems[0] ? sortedItems[0][1].total : 1;
+            
+            data.push(['Hạng', 'Tên sản phẩm', 'Biểu đồ cột (%)', 'Tỷ lệ %', 'Số lượng']);
+            
+            sortedItems.forEach(([itemName, itemData], index) => {
+                const percentage = Math.round(itemData.total / grandTotal * 10000) / 100;
+                const barLength = Math.round((itemData.total / maxValue) * maxBarLength);
+                const bar = '█'.repeat(Math.max(1, Math.floor(barLength / 2))) + 
+                           '▌'.repeat(barLength % 2);
+                
+                // Cắt ngắn tên sản phẩm nếu quá dài
+                const shortName = itemName.length > 15 ? itemName.substring(0, 15) + '...' : itemName;
+                
+                data.push([
+                    index + 1,
+                    shortName,
+                    bar,
+                    `${percentage}%`,
+                    itemData.total
                 ]);
             });
             
@@ -1475,17 +1523,34 @@
         function formatTopItemsSheet(ws) {
             ws['!cols'] = [
                 { width: 8 },   // Hạng
-                { width: 35 },  // Tên chi tiết
-                { width: 12 },  // Tổng SL
-                { width: 10 },  // Số tháng
-                { width: 10 },  // Số lần
+                { width: 20 },  // Tên chi tiết/sản phẩm
+                { width: 25 },  // Tổng SL/Biểu đồ cột
+                { width: 10 },  // Số tháng/Tỷ lệ %
+                { width: 10 },  // Số lần/Số lượng
                 { width: 12 },  // TB/tháng
-                { width: 12 }   // TB/lần
+                { width: 12 },  // TB/lần
+                { width: 15 }   // % so với tổng
             ];
             
             ws['!merges'] = [
-                { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }  // Merge tiêu đề chính
             ];
+            
+            // Tìm vị trí của biểu đồ để merge tiêu đề
+            let chartTitleRow = -1;
+            for (let i = 0; i < 50; i++) {
+                const cellRef = XLSX.utils.encode_cell({ r: i, c: 0 });
+                if (ws[cellRef] && ws[cellRef].v === 'BIỂU ĐỒ TỶ LỆ % TOP 20 SẢN PHẨM') {
+                    chartTitleRow = i;
+                    break;
+                }
+            }
+            
+            if (chartTitleRow >= 0) {
+                // Merge tiêu đề biểu đồ
+                if (!ws['!merges']) ws['!merges'] = [];
+                ws['!merges'].push({ s: { r: chartTitleRow, c: 0 }, e: { r: chartTitleRow, c: 4 } });
+            }
         }
 
         // Cleanup on page unload
