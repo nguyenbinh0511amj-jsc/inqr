@@ -1124,22 +1124,64 @@
             data.push([]);
             data.push(['', 'TỔNG CỘNG', grandTotal, '', '', '100%']);
             
+            // Thêm khoảng trống cho biểu đồ
+            data.push([]);
+            data.push([]);
+            data.push(['BIỂU ĐỒ TỶ LỆ PHẦN TRĂM THEO THÁNG']);
+            data.push([]);
+            
+            // Tạo biểu đồ ASCII đơn giản
+            const maxBarLength = 50;
+            const maxValue = Math.max(...Object.values(monthlyData));
+            
+            data.push(['Tháng/Năm', 'Biểu đồ cột (%)', 'Tỷ lệ %']);
+            
+            sortedMonths.forEach(month => {
+                const total = monthlyData[month];
+                const percentage = Math.round(total / grandTotal * 10000) / 100;
+                const barLength = Math.round((total / maxValue) * maxBarLength);
+                const bar = '█'.repeat(Math.max(1, Math.floor(barLength / 2))) + 
+                           '▌'.repeat(barLength % 2);
+                
+                data.push([
+                    month,
+                    bar,
+                    `${percentage}%`
+                ]);
+            });
+            
             return data;
         }
 
         function formatMonthlySheet(ws) {
             ws['!cols'] = [
                 { width: 8 },   // STT
-                { width: 12 },  // Tháng/Năm
-                { width: 15 },  // Tổng SL
+                { width: 12 },  // Tháng/Năm hoặc Biểu đồ cột
+                { width: 15 },  // Tổng SL hoặc Tỷ lệ %
                 { width: 12 },  // Số mặt hàng
                 { width: 20 },  // Trung bình
                 { width: 15 }   // %
             ];
             
             ws['!merges'] = [
-                { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }  // Merge tiêu đề chính
             ];
+            
+            // Tìm vị trí của biểu đồ để merge tiêu đề
+            let chartTitleRow = -1;
+            for (let i = 0; i < 50; i++) {
+                const cellRef = XLSX.utils.encode_cell({ r: i, c: 0 });
+                if (ws[cellRef] && ws[cellRef].v === 'BIỂU ĐỒ TỶ LỆ PHẦN TRĂM THEO THÁNG') {
+                    chartTitleRow = i;
+                    break;
+                }
+            }
+            
+            if (chartTitleRow >= 0) {
+                // Merge tiêu đề biểu đồ
+                if (!ws['!merges']) ws['!merges'] = [];
+                ws['!merges'].push({ s: { r: chartTitleRow, c: 0 }, e: { r: chartTitleRow, c: 2 } });
+            }
         }
 
         function createTopItemsSheet() {
