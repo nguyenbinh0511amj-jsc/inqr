@@ -443,7 +443,6 @@
         let currentChart = null;
         let autoSyncInterval = null;
         let lastSyncTime = null;
-        const AUTO_SYNC_INTERVAL = 10000; // 10 giây tự động đồng bộ
         
         // API Key và Sheet ID được gán cố định
         const API_KEY = "AIzaSyCrC_DfD_DrpjzjO5ENvqTMHBA4FIDBiP0";
@@ -748,11 +747,9 @@
             
             document.getElementById('results').classList.remove('hidden');
             
-            // Enable export button
+            // Enable buttons
             document.getElementById('exportExcel').disabled = false;
-            
-            // Bắt đầu auto sync sau khi load dữ liệu thành công
-            startAutoSync();
+            document.getElementById('syncNow').disabled = false;
         }
 
         function displaySummaryCards() {
@@ -950,23 +947,90 @@
             }
         });
 
-        // Auto sync functions - chạy ngầm
-        function startAutoSync() {
-            if (autoSyncInterval) {
-                clearInterval(autoSyncInterval);
-            }
+        // Sync now function
+        async function syncNow() {
+            const button = document.getElementById('syncNow');
+            const originalText = button.textContent;
             
-            console.log('🟢 Auto sync started: 10s interval');
-            autoSyncInterval = setInterval(() => {
-                loadSheetData(true);
-            }, AUTO_SYNC_INTERVAL);
+            // Visual feedback
+            button.textContent = '⚡ Đang đồng bộ...';
+            button.disabled = true;
+            button.classList.add('pulsing');
+            
+            try {
+                await loadSheetData(false); // Force full sync với loading
+                showStatus('⚡ Đồng bộ ngay lập tức thành công!', 'success');
+                setTimeout(hideStatus, 2000);
+            } catch (error) {
+                showStatus('❌ Lỗi đồng bộ ngay lập tức', 'error');
+            } finally {
+                // Restore button
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                    button.classList.remove('pulsing');
+                }, 1000);
+            }
         }
 
-        function stopAutoSync() {
+        // Auto sync functions
+        function toggleAutoSync() {
+            const button = document.getElementById('toggleAutoSync');
+            const syncStatus = document.getElementById('syncStatus');
+            
             if (autoSyncInterval) {
+                // Tắt auto sync
                 clearInterval(autoSyncInterval);
                 autoSyncInterval = null;
-                console.log('🔴 Auto sync stopped');
+                button.textContent = '🔄 Bật tự động';
+                button.classList.remove('active');
+                syncStatus.classList.remove('active');
+                console.log('🔴 Auto sync disabled');
+            } else {
+                // Bật auto sync
+                if (rawData.length === 0) {
+                    showStatus('Vui lòng tải dữ liệu trước khi bật tự động đồng bộ', 'error');
+                    return;
+                }
+                
+                const intervalSeconds = parseInt(document.getElementById('syncInterval').value);
+                autoSyncInterval = setInterval(() => {
+                    loadSheetData(true);
+                }, intervalSeconds * 1000);
+                
+                button.textContent = '⏹️ Tắt tự động';
+                button.classList.add('active');
+                syncStatus.classList.add('active');
+                console.log(`🟢 Auto sync enabled: ${intervalSeconds}s interval`);
+            }
+            
+            updateSyncStatus();
+            syncStatus.classList.remove('hidden');
+        }
+
+        function updateSyncInterval() {
+            if (autoSyncInterval) {
+                // Restart với interval mới
+                toggleAutoSync(); // Tắt
+                toggleAutoSync(); // Bật lại với interval mới
+            }
+        }
+
+        function updateSyncStatus() {
+            const syncStatusText = document.getElementById('syncStatusText');
+            const lastSyncText = document.getElementById('lastSyncText');
+            const intervalSeconds = parseInt(document.getElementById('syncInterval').value);
+            
+            if (autoSyncInterval) {
+                syncStatusText.textContent = `🟢 Tự động đồng bộ: BẬT (${intervalSeconds}s)`;
+            } else {
+                syncStatusText.textContent = '🔴 Tự động đồng bộ: TẮT';
+            }
+            
+            if (lastSyncTime) {
+                lastSyncText.textContent = `Cập nhật cuối: ${lastSyncTime.toLocaleString('vi-VN')}`;
+            } else {
+                lastSyncText.textContent = '';
             }
         }
         function exportToExcel() {
@@ -1073,9 +1137,13 @@
 
         // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
-            stopAutoSync();
+            if (autoSyncInterval) {
+                clearInterval(autoSyncInterval);
+            }
         });
 
+        // No enter key support needed since no input fields
+        
         // Test XLSX library on page load
         window.addEventListener('load', () => {
             console.log('🔍 Checking XLSX library...');
