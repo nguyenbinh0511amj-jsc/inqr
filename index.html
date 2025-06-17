@@ -519,6 +519,18 @@
                 </div>
             </div>
             
+            <div class="analysis-section">
+                <div class="percentage-chart">
+                    <h3>🏆 Top 10 sản phẩm (% tỷ lệ)</h3>
+                    <div id="topProductsChart"></div>
+                </div>
+                
+                <div class="trend-analysis">
+                    <h3>📋 Thống kê Top sản phẩm</h3>
+                    <div id="topProductsStats"></div>
+                </div>
+            </div>
+            
             <div class="chart-container">
                 <h3>📈 Biểu đồ theo tháng</h3>
                 <canvas id="monthlyChart"></canvas>
@@ -585,7 +597,6 @@
             }
 
             try {
-                // Sử dụng CORS proxy để tránh lỗi CORS
                 const proxyUrl = 'https://api.allorigins.win/raw?url=';
                 const targetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/so_giao_nhan?key=${API_KEY}`;
                 const finalUrl = proxyUrl + encodeURIComponent(targetUrl);
@@ -612,7 +623,6 @@
                     throw new Error('Không có dữ liệu hợp lệ để phân tích');
                 }
                 
-                // Kiểm tra có thay đổi dữ liệu không (cho auto sync)
                 const hasDataChanged = isAutoSync && (
                     !rawData.length || 
                     newRawData.length !== rawData.length ||
@@ -624,7 +634,6 @@
                 displayResults();
                 populateYearFilter();
                 
-                // Cập nhật thời gian sync cuối
                 lastSyncTime = new Date();
                 updateSyncStatus();
                 
@@ -639,7 +648,6 @@
             } catch (error) {
                 console.error('❌ Lỗi:', error);
                 
-                // Nếu proxy không hoạt động, thử trực tiếp
                 if (error.message.includes('fetch')) {
                     if (!isAutoSync) {
                         showStatus('🔄 Thử phương pháp khác...', 'loading');
@@ -691,7 +699,6 @@
             
             console.log('📋 Headers found:', headers);
             
-            // Mapping theo cấu trúc thực tế của sheet
             const columnMap = {
                 order_kd: 0,
                 ten_chi_tiet: 1, 
@@ -716,7 +723,7 @@
             for (let i = 1; i < values.length; i++) {
                 const row = values[i];
                 
-                if (row.length > 11) { // Đảm bảo có đủ cột
+                if (row.length > 11) {
                     const tenChiTiet = row[columnMap.ten_chi_tiet]?.toString().trim();
                     const ngayNhan = row[columnMap.ngay_nhan]?.toString().trim();
                     const slNhan = parseFloat(row[columnMap.sl_nhan]) || 0;
@@ -743,22 +750,21 @@
         }
 
         function parseDate(dateStr) {
-            // Thử các định dạng ngày khác nhau
             const formats = [
-                /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, // dd/mm/yyyy
-                /^(\d{4})-(\d{1,2})-(\d{1,2})$/, // yyyy-mm-dd
-                /^(\d{1,2})-(\d{1,2})-(\d{4})$/, // dd-mm-yyyy
+                /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
+                /^(\d{4})-(\d{1,2})-(\d{1,2})$/,
+                /^(\d{1,2})-(\d{1,2})-(\d{4})$/,
             ];
             
             for (let format of formats) {
                 const match = dateStr.match(format);
                 if (match) {
                     let day, month, year;
-                    if (format === formats[1]) { // yyyy-mm-dd
+                    if (format === formats[1]) {
                         year = parseInt(match[1]);
                         month = parseInt(match[2]);
                         day = parseInt(match[3]);
-                    } else { // dd/mm/yyyy or dd-mm-yyyy
+                    } else {
                         day = parseInt(match[1]);
                         month = parseInt(match[2]);
                         year = parseInt(match[3]);
@@ -771,7 +777,6 @@
                 }
             }
             
-            // Thử Date constructor trực tiếp
             const date = new Date(dateStr);
             return isNaN(date.getTime()) ? null : date;
         }
@@ -790,11 +795,9 @@
                 filteredData = filteredData.filter(item => item.month.toString() === monthFilter);
             }
             
-            // Nhóm dữ liệu theo tên chi tiết và tháng/năm - GỘP CÙNG TÊN TRONG CÙNG THÁNG
             const grouped = {};
             
             filteredData.forEach(item => {
-                // Key chỉ dựa trên tên chi tiết + tháng/năm (không phân biệt ngày cụ thể)
                 const key = `${item.tenChiTiet}|${item.month}/${item.year}`;
                 
                 if (!grouped[key]) {
@@ -804,14 +807,13 @@
                         month: item.month,
                         year: item.year,
                         totalSlNhan: 0,
-                        count: 0 // Đếm số lần xuất hiện
+                        count: 0
                     };
                 }
                 grouped[key].totalSlNhan += item.slNhan;
                 grouped[key].count += 1;
             });
             
-            // Chuyển về array và sắp xếp
             processedData = Object.values(grouped).sort((a, b) => {
                 if (a.year !== b.year) return b.year - a.year;
                 if (a.month !== b.month) return b.month - a.month;
@@ -825,16 +827,15 @@
             displaySummaryCards();
             displayPercentageChart();
             displayTrendAnalysis();
+            displayTopProductsChart();
+            displayTopProductsStats();
             displayTable();
             
-            // Delay chart display để table render trước
             setTimeout(() => {
                 displayChart();
             }, 100);
             
             document.getElementById('results').classList.remove('hidden');
-            
-            // Enable export button
             document.getElementById('exportExcel').disabled = false;
         }
 
@@ -842,9 +843,7 @@
             const totalItems = processedData.length;
             const totalQuantity = processedData.reduce((sum, item) => sum + item.totalSlNhan, 0);
             const uniqueItems = new Set(processedData.map(item => item.tenChiTiet)).size;
-            const uniqueMonths = new Set(processedData.map(item => item.monthYear)).size;
             
-            // Tìm sản phẩm có tổng số lượng nhận nhiều nhất
             const productTotals = {};
             processedData.forEach(item => {
                 if (!productTotals[item.tenChiTiet]) {
@@ -883,7 +882,6 @@
         }
 
         function displayPercentageChart() {
-            // Nhóm dữ liệu theo tháng/năm
             const monthlyData = {};
             processedData.forEach(item => {
                 if (!monthlyData[item.monthYear]) {
@@ -901,20 +899,19 @@
             
             const grandTotal = Object.values(monthlyData).reduce((sum, val) => sum + val, 0);
             
-            // Tạo màu sắc khác nhau cho mỗi tháng
             const colors = [
-                'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', // Tím xanh
-                'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', // Hồng đỏ
-                'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', // Xanh dương
-                'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', // Xanh lá
-                'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)', // Cam nhạt
-                'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', // Xanh hồng
-                'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)', // Hồng nhạt
-                'linear-gradient(135deg, #ffeae0 0%, #ff9a9e 100%)', // Đào
-                'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', // Tím xanh lặp lại
-                'linear-gradient(135deg, #48bb78 0%, #38a169 100%)', // Xanh lá đậm
-                'linear-gradient(135deg, #3182ce 0%, #2c5282 100%)', // Xanh dương đậm
-                'linear-gradient(135deg, #f56565 0%, #e53e3e 100%)'  // Đỏ
+                'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
+                'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+                'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+                'linear-gradient(135deg, #ffeae0 0%, #ff9a9e 100%)',
+                'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                'linear-gradient(135deg, #48bb78 0%, #38a169 100%)',
+                'linear-gradient(135deg, #3182ce 0%, #2c5282 100%)',
+                'linear-gradient(135deg, #f56565 0%, #e53e3e 100%)'
             ];
             
             let chartHTML = '';
@@ -939,7 +936,6 @@
         }
 
         function displayTrendAnalysis() {
-            // Nhóm dữ liệu theo tháng/năm
             const monthlyData = {};
             const monthlyItems = {};
             
@@ -991,6 +987,114 @@
             document.getElementById('trendAnalysis').innerHTML = trendHTML;
         }
 
+        function displayTopProductsChart() {
+            const itemTotals = {};
+            processedData.forEach(item => {
+                if (!itemTotals[item.tenChiTiet]) {
+                    itemTotals[item.tenChiTiet] = 0;
+                }
+                itemTotals[item.tenChiTiet] += item.totalSlNhan;
+            });
+            
+            const sortedItems = Object.entries(itemTotals)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 10);
+            
+            const grandTotal = Object.values(itemTotals).reduce((sum, val) => sum + val, 0);
+            
+            const productColors = [
+                'linear-gradient(135deg, #f56565 0%, #e53e3e 100%)',
+                'linear-gradient(135deg, #48bb78 0%, #38a169 100%)',
+                'linear-gradient(135deg, #4299e1 0%, #3182ce 100%)',
+                'linear-gradient(135deg, #ed8936 0%, #dd6b20 100%)',
+                'linear-gradient(135deg, #9f7aea 0%, #805ad5 100%)',
+                'linear-gradient(135deg, #38b2ac 0%, #319795 100%)',
+                'linear-gradient(135deg, #ec4899 0%, #d53f8c 100%)',
+                'linear-gradient(135deg, #f6ad55 0%, #ed8936 100%)',
+                'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
+            ];
+            
+            let chartHTML = '';
+            
+            sortedItems.forEach(([itemName, total], index) => {
+                const percentage = Math.round(total / grandTotal * 10000) / 100;
+                const color = productColors[index % productColors.length];
+                const shortName = itemName.length > 15 ? itemName.substring(0, 15) + '...' : itemName;
+                
+                chartHTML += `
+                    <div class="chart-bar">
+                        <div class="chart-bar-label" style="min-width: 120px;" title="${itemName}">${shortName}</div>
+                        <div class="chart-bar-visual">
+                            <div class="chart-bar-fill" style="width: ${percentage}%; background: ${color}"></div>
+                        </div>
+                        <div class="chart-bar-value">${percentage}%</div>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('topProductsChart').innerHTML = chartHTML;
+        }
+
+        function displayTopProductsStats() {
+            const itemTotals = {};
+            const itemMonths = {};
+            const itemCounts = {};
+            
+            processedData.forEach(item => {
+                if (!itemTotals[item.tenChiTiet]) {
+                    itemTotals[item.tenChiTiet] = 0;
+                    itemMonths[item.tenChiTiet] = new Set();
+                    itemCounts[item.tenChiTiet] = 0;
+                }
+                itemTotals[item.tenChiTiet] += item.totalSlNhan;
+                itemMonths[item.tenChiTiet].add(item.monthYear);
+                itemCounts[item.tenChiTiet] += (item.count || 1);
+            });
+            
+            const sortedItems = Object.entries(itemTotals)
+                .sort(([,a], [,b]) => b - a);
+            
+            const topProduct = sortedItems[0];
+            const avgPerProduct = Math.round(Object.values(itemTotals).reduce((sum, val) => sum + val, 0) / sortedItems.length);
+            const totalProducts = sortedItems.length;
+            const productsAboveAvg = sortedItems.filter(([,total]) => total > avgPerProduct).length;
+            const topProductMonths = topProduct ? itemMonths[topProduct[0]].size : 0;
+            const topProductAvgPerMonth = topProduct ? Math.round(topProduct[1] / topProductMonths) : 0;
+            
+            // Tính TB SL/sản phẩm chỉ cho sản phẩm #1
+            const topProductAvgPerRecord = topProduct ? Math.round(topProduct[1] / itemCounts[topProduct[0]]) : 0;
+            
+            const statsHTML = `
+                <div class="trend-item">
+                    <div class="trend-label">Sản phẩm #1:</div>
+                    <div class="trend-value highest" title="${topProduct ? topProduct[0] : 'N/A'}">${topProduct ? (topProduct[0].length > 20 ? topProduct[0].substring(0, 20) + '...' : topProduct[0]) : 'N/A'}</div>
+                </div>
+                <div class="trend-item">
+                    <div class="trend-label">Số lượng #1:</div>
+                    <div class="trend-value highest">${topProduct ? topProduct[1].toLocaleString() : 0}</div>
+                </div>
+                <div class="trend-item">
+                    <div class="trend-label">TB SL/sản phẩm:</div>
+                    <div class="trend-value">${topProductAvgPerRecord.toLocaleString()}</div>
+                </div>
+                <div class="trend-item">
+                    <div class="trend-label">Tổng sản phẩm:</div>
+                    <div class="trend-value">${totalProducts.toLocaleString()}</div>
+                </div>
+                <div class="trend-item">
+                    <div class="trend-label">SP trên TB:</div>
+                    <div class="trend-value">${productsAboveAvg} / ${totalProducts}</div>
+                </div>
+                <div class="trend-item">
+                    <div class="trend-label">TB #1/tháng:</div>
+                    <div class="trend-value">${topProductAvgPerMonth.toLocaleString()}</div>
+                </div>
+            `;
+            
+            document.getElementById('topProductsStats').innerHTML = statsHTML;
+        }
+
         function displayTable() {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
@@ -1000,7 +1104,6 @@
                 row.insertCell(0).textContent = item.tenChiTiet;
                 row.insertCell(1).textContent = item.monthYear;
                 
-                // Hiển thị tổng số lượng và số lần xuất hiện (nếu > 1)
                 const slCell = row.insertCell(2);
                 if (item.count > 1) {
                     slCell.innerHTML = `<strong>${item.totalSlNhan.toLocaleString()}</strong> <small style="color: #666;">(${item.count} lần)</small>`;
@@ -1017,7 +1120,6 @@
                 currentChart.destroy();
             }
             
-            // Nhóm dữ liệu theo tháng/năm
             const monthlyData = {};
             processedData.forEach(item => {
                 if (!monthlyData[item.monthYear]) {
@@ -1035,7 +1137,6 @@
             
             const chartData = sortedMonths.map(month => monthlyData[month]);
             
-            // Tạo màu sắc khác nhau cho mỗi tháng
             const colors = [
                 '#667eea', '#764ba2', '#f093fb', '#f5576c',
                 '#4facfe', '#00f2fe', '#43e97b', '#38f9d7',
@@ -1117,21 +1218,12 @@
                     }
                 }
             });
-            
-            // Set chart container height để khớp với bảng
-            const chartContainer = document.querySelector('.chart-container');
-            const tableContainer = document.querySelector('.table-container');
-            if (tableContainer) {
-                const tableHeight = tableContainer.offsetHeight;
-                chartContainer.style.height = `${tableHeight}px`;
-            }
         }
 
         function populateYearFilter() {
             const years = [...new Set(rawData.map(item => item.year))].sort((a, b) => b - a);
             const yearSelect = document.getElementById('yearFilter');
             
-            // Clear existing options except "Tất cả các năm"
             yearSelect.innerHTML = '<option value="">Tất cả các năm</option>';
             
             years.forEach(year => {
@@ -1142,7 +1234,6 @@
             });
         }
 
-        // Event listeners for filters
         document.getElementById('yearFilter').addEventListener('change', () => {
             if (rawData.length > 0) {
                 processData();
@@ -1157,13 +1248,11 @@
             }
         });
 
-        // Auto sync functions
         function toggleAutoSync() {
             const button = document.getElementById('toggleAutoSync');
             const syncStatus = document.getElementById('syncStatus');
             
             if (autoSyncInterval) {
-                // Tắt auto sync
                 clearInterval(autoSyncInterval);
                 autoSyncInterval = null;
                 button.textContent = '🔄 Bật tự động';
@@ -1171,7 +1260,6 @@
                 syncStatus.classList.remove('active');
                 console.log('🔴 Auto sync disabled');
             } else {
-                // Bật auto sync
                 if (rawData.length === 0) {
                     showStatus('Vui lòng tải dữ liệu trước khi bật tự động đồng bộ', 'error');
                     return;
@@ -1194,9 +1282,8 @@
 
         function updateSyncInterval() {
             if (autoSyncInterval) {
-                // Restart với interval mới
-                toggleAutoSync(); // Tắt
-                toggleAutoSync(); // Bật lại với interval mới
+                toggleAutoSync();
+                toggleAutoSync();
             }
         }
 
@@ -1220,7 +1307,6 @@
 
         function exportToExcel() {
             console.log('🔄 Bắt đầu xuất Excel...');
-            console.log('📊 ProcessedData length:', processedData.length);
             
             if (processedData.length === 0) {
                 showStatus('Không có dữ liệu để xuất', 'error');
@@ -1228,54 +1314,34 @@
             }
 
             try {
-                console.log('📝 Tạo dữ liệu Excel...');
-                
-                // Kiểm tra XLSX library
                 if (typeof XLSX === 'undefined') {
                     showStatus('❌ Lỗi: Thư viện XLSX chưa được tải', 'error');
                     return;
                 }
                 
-                // Tạo workbook mới
                 const wb = XLSX.utils.book_new();
                 
-                // === SHEET 1: DỮ LIỆU CHI TIẾT ===
                 const detailData = createDetailSheet();
                 const ws_detail = XLSX.utils.aoa_to_sheet(detailData);
-                
-                // Định dạng cho detail sheet
                 formatDetailSheet(ws_detail);
                 
-                // === SHEET 2: THỐNG KÊ THEO THÁNG ===
                 const monthlyData = createMonthlySheet();
                 const ws_monthly = XLSX.utils.aoa_to_sheet(monthlyData);
-                
-                // Định dạng cho monthly sheet
                 formatMonthlySheet(ws_monthly);
                 
-                // === SHEET 3: TOP ITEMS ===
                 const topItemsData = createTopItemsSheet();
                 const ws_topitems = XLSX.utils.aoa_to_sheet(topItemsData);
-                
-                // Định dạng cho top items sheet
                 formatTopItemsSheet(ws_topitems);
                 
-                // Thêm tất cả sheets vào workbook
                 XLSX.utils.book_append_sheet(wb, ws_detail, "📋 Dữ liệu chi tiết");
                 XLSX.utils.book_append_sheet(wb, ws_monthly, "📅 Theo tháng");
                 XLSX.utils.book_append_sheet(wb, ws_topitems, "🏆 Top sản phẩm");
                 
-                console.log('📚 Workbook created with formatting');
-                
-                // Tạo tên file
                 const now = new Date();
                 const dateStr = now.toLocaleDateString('vi-VN').replace(/\//g, '-');
                 const timeStr = now.toLocaleTimeString('vi-VN').replace(/:/g, '-');
                 const filename = `Bao_cao_giao_nhan_${dateStr}_${timeStr}.xlsx`;
                 
-                console.log('💾 Saving file:', filename);
-                
-                // Xuất file
                 XLSX.writeFile(wb, filename);
                 
                 showStatus(`✅ Đã xuất thành công: ${filename}`, 'success');
@@ -1306,7 +1372,6 @@
                 ]);
             });
             
-            // Thêm dòng tổng cộng
             const totalSL = processedData.reduce((sum, item) => sum + item.totalSlNhan, 0);
             const totalCount = processedData.reduce((sum, item) => sum + (item.count || 1), 0);
             
@@ -1317,24 +1382,21 @@
         }
 
         function formatDetailSheet(ws) {
-            // Set column widths
             ws['!cols'] = [
-                { width: 8 },   // STT
-                { width: 35 },  // Tên chi tiết
-                { width: 12 },  // Tháng/Năm
-                { width: 15 },  // Tổng SL
-                { width: 18 },  // Số lần
-                { width: 15 }   // Trung bình
+                { width: 8 },
+                { width: 35 },
+                { width: 12 },
+                { width: 15 },
+                { width: 18 },
+                { width: 15 }
             ];
             
-            // Merge cells cho tiêu đề
             ws['!merges'] = [
                 { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }
             ];
         }
 
         function createMonthlySheet() {
-            // Nhóm dữ liệu theo tháng/năm
             const monthlyData = {};
             const monthlyItems = {};
             
@@ -1381,13 +1443,11 @@
             data.push([]);
             data.push(['', 'TỔNG CỘNG', grandTotal, '', '', '100%']);
             
-            // Thêm khoảng trống cho biểu đồ
             data.push([]);
             data.push([]);
             data.push(['BIỂU ĐỒ TỶ LỆ PHẦN TRĂM THEO THÁNG']);
             data.push([]);
             
-            // Tạo biểu đồ ASCII đơn giản
             const maxBarLength = 50;
             const maxValue = Math.max(...Object.values(monthlyData));
             
@@ -1412,37 +1472,20 @@
 
         function formatMonthlySheet(ws) {
             ws['!cols'] = [
-                { width: 8 },   // STT
-                { width: 12 },  // Tháng/Năm hoặc Biểu đồ cột
-                { width: 15 },  // Tổng SL hoặc Tỷ lệ %
-                { width: 12 },  // Số mặt hàng
-                { width: 20 },  // Trung bình
-                { width: 15 }   // %
+                { width: 8 },
+                { width: 12 },
+                { width: 15 },
+                { width: 12 },
+                { width: 20 },
+                { width: 15 }
             ];
             
             ws['!merges'] = [
-                { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }  // Merge tiêu đề chính
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }
             ];
-            
-            // Tìm vị trí của biểu đồ để merge tiêu đề
-            let chartTitleRow = -1;
-            for (let i = 0; i < 50; i++) {
-                const cellRef = XLSX.utils.encode_cell({ r: i, c: 0 });
-                if (ws[cellRef] && ws[cellRef].v === 'BIỂU ĐỒ TỶ LỆ PHẦN TRĂM THEO THÁNG') {
-                    chartTitleRow = i;
-                    break;
-                }
-            }
-            
-            if (chartTitleRow >= 0) {
-                // Merge tiêu đề biểu đồ
-                if (!ws['!merges']) ws['!merges'] = [];
-                ws['!merges'].push({ s: { r: chartTitleRow, c: 0 }, e: { r: chartTitleRow, c: 2 } });
-            }
         }
 
         function createTopItemsSheet() {
-            // Tính tổng cho mỗi sản phẩm
             const itemTotals = {};
             processedData.forEach(item => {
                 if (!itemTotals[item.tenChiTiet]) {
@@ -1457,10 +1500,9 @@
                 itemTotals[item.tenChiTiet].count += (item.count || 1);
             });
             
-            // Sắp xếp theo tổng số lượng
             const sortedItems = Object.entries(itemTotals)
                 .sort(([,a], [,b]) => b.total - a.total)
-                .slice(0, 20); // Top 20
+                .slice(0, 20);
             
             const data = [
                 ['TOP 20 SẢN PHẨM THEO SỐ LƯỢNG'],
@@ -1487,13 +1529,11 @@
                 ]);
             });
             
-            // Thêm khoảng trống cho biểu đồ
             data.push([]);
             data.push([]);
             data.push(['BIỂU ĐỒ TỶ LỆ % TOP 20 SẢN PHẨM']);
             data.push([]);
             
-            // Tạo biểu đồ ASCII
             const maxBarLength = 40;
             const maxValue = sortedItems[0] ? sortedItems[0][1].total : 1;
             
@@ -1505,7 +1545,6 @@
                 const bar = '█'.repeat(Math.max(1, Math.floor(barLength / 2))) + 
                            '▌'.repeat(barLength % 2);
                 
-                // Cắt ngắn tên sản phẩm nếu quá dài
                 const shortName = itemName.length > 15 ? itemName.substring(0, 15) + '...' : itemName;
                 
                 data.push([
@@ -1522,45 +1561,27 @@
 
         function formatTopItemsSheet(ws) {
             ws['!cols'] = [
-                { width: 8 },   // Hạng
-                { width: 20 },  // Tên chi tiết/sản phẩm
-                { width: 25 },  // Tổng SL/Biểu đồ cột
-                { width: 10 },  // Số tháng/Tỷ lệ %
-                { width: 10 },  // Số lần/Số lượng
-                { width: 12 },  // TB/tháng
-                { width: 12 },  // TB/lần
-                { width: 15 }   // % so với tổng
+                { width: 8 },
+                { width: 20 },
+                { width: 25 },
+                { width: 10 },
+                { width: 10 },
+                { width: 12 },
+                { width: 12 },
+                { width: 15 }
             ];
             
             ws['!merges'] = [
-                { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }  // Merge tiêu đề chính
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }
             ];
-            
-            // Tìm vị trí của biểu đồ để merge tiêu đề
-            let chartTitleRow = -1;
-            for (let i = 0; i < 50; i++) {
-                const cellRef = XLSX.utils.encode_cell({ r: i, c: 0 });
-                if (ws[cellRef] && ws[cellRef].v === 'BIỂU ĐỒ TỶ LỆ % TOP 20 SẢN PHẨM') {
-                    chartTitleRow = i;
-                    break;
-                }
-            }
-            
-            if (chartTitleRow >= 0) {
-                // Merge tiêu đề biểu đồ
-                if (!ws['!merges']) ws['!merges'] = [];
-                ws['!merges'].push({ s: { r: chartTitleRow, c: 0 }, e: { r: chartTitleRow, c: 4 } });
-            }
         }
 
-        // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
             if (autoSyncInterval) {
                 clearInterval(autoSyncInterval);
             }
         });
 
-        // Test XLSX library on page load
         window.addEventListener('load', () => {
             console.log('🔍 Checking XLSX library...');
             if (typeof XLSX !== 'undefined') {
