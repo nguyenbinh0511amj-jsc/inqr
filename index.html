@@ -887,17 +887,34 @@
             
             const grandTotal = Object.values(monthlyData).reduce((sum, val) => sum + val, 0);
             
+            // Tạo màu sắc khác nhau cho mỗi tháng
+            const colors = [
+                'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', // Tím xanh
+                'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', // Hồng đỏ
+                'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', // Xanh dương
+                'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', // Xanh lá
+                'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)', // Cam nhạt
+                'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', // Xanh hồng
+                'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)', // Hồng nhạt
+                'linear-gradient(135deg, #ffeae0 0%, #ff9a9e 100%)', // Đào
+                'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', // Tím xanh lặp lại
+                'linear-gradient(135deg, #48bb78 0%, #38a169 100%)', // Xanh lá đậm
+                'linear-gradient(135deg, #3182ce 0%, #2c5282 100%)', // Xanh dương đậm
+                'linear-gradient(135deg, #f56565 0%, #e53e3e 100%)'  // Đỏ
+            ];
+            
             let chartHTML = '';
             
-            sortedMonths.forEach(month => {
+            sortedMonths.forEach((month, index) => {
                 const total = monthlyData[month];
                 const percentage = Math.round(total / grandTotal * 10000) / 100;
+                const color = colors[index % colors.length];
                 
                 chartHTML += `
                     <div class="chart-bar">
                         <div class="chart-bar-label">${month}</div>
                         <div class="chart-bar-visual">
-                            <div class="chart-bar-fill" style="width: ${percentage}%"></div>
+                            <div class="chart-bar-fill" style="width: ${percentage}%; background: ${color}"></div>
                         </div>
                         <div class="chart-bar-value">${percentage}%</div>
                     </div>
