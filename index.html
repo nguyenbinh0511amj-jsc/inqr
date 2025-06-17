@@ -147,16 +147,6 @@
             background: rgba(72, 187, 120, 0.1);
         }
 
-        .sync-now-btn {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
-            margin-left: 10px;
-        }
-
-        .sync-now-btn:hover:not(:disabled) {
-            background: linear-gradient(135deg, #f5576c 0%, #e53e3e 100%) !important;
-            transform: translateY(-2px);
-        }
-
         select {
             padding: 12px 16px;
             border: 2px solid #e2e8f0;
@@ -164,16 +154,6 @@
             font-size: 14px;
             transition: all 0.3s ease;
             margin-left: 10px;
-        }
-
-        .pulsing {
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
         }
 
         .status {
@@ -372,9 +352,6 @@
                     <option value="11">Tháng 11</option>
                     <option value="12">Tháng 12</option>
                 </select>
-                <button id="exportExcel" onclick="exportToExcel()" class="export-btn" disabled>
-                    📊 Xuất Excel
-                </button>
             </div>
             
             <div class="control-group">
@@ -388,8 +365,6 @@
                 </button>
                 
                 <select id="syncInterval" onchange="updateSyncInterval()">
-                    <option value="5">5 giây</option>
-                    <option value="10">10 giây</option>
                     <option value="30">30 giây</option>
                     <option value="60" selected>1 phút</option>
                     <option value="300">5 phút</option>
@@ -397,8 +372,8 @@
                     <option value="1800">30 phút</option>
                 </select>
                 
-                <button id="syncNow" onclick="syncNow()" class="sync-now-btn" disabled>
-                    ⚡ Đồng bộ ngay
+                <button id="exportExcel" onclick="exportToExcel()" class="export-btn" disabled>
+                    📊 Xuất Excel
                 </button>
             </div>
             
@@ -479,24 +454,16 @@
             }
 
             try {
-                // Thêm timestamp để tránh cache
-                const timestamp = new Date().getTime();
+                // Sử dụng CORS proxy để tránh lỗi CORS
                 const proxyUrl = 'https://api.allorigins.win/raw?url=';
-                const targetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/so_giao_nhan?key=${API_KEY}&_t=${timestamp}`;
+                const targetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/so_giao_nhan?key=${API_KEY}`;
                 const finalUrl = proxyUrl + encodeURIComponent(targetUrl);
                 
                 if (!isAutoSync) {
                     console.log('🔗 Fetching from:', finalUrl);
                 }
                 
-                const response = await fetch(finalUrl, {
-                    cache: 'no-cache', // Force no cache
-                    headers: {
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache',
-                        'Expires': '0'
-                    }
-                });
+                const response = await fetch(finalUrl);
                 
                 if (!response.ok) {
                     throw new Error(`Lỗi API: ${response.status} - ${response.statusText}`);
@@ -518,7 +485,7 @@
                 const hasDataChanged = isAutoSync && (
                     !rawData.length || 
                     newRawData.length !== rawData.length ||
-                    JSON.stringify(newRawData.slice(-5)) !== JSON.stringify(rawData.slice(-5)) // So sánh 5 dòng cuối
+                    JSON.stringify(newRawData) !== JSON.stringify(rawData)
                 );
                 
                 rawData = newRawData;
@@ -531,17 +498,7 @@
                 updateSyncStatus();
                 
                 if (isAutoSync && hasDataChanged) {
-                    showStatus(`🔄 Cập nhật mới: ${rawData.length} dòng (${lastSyncTime.toLocaleTimeString()})`, 'success');
-                    
-                    // Flash effect để báo hiệu cập nhật
-                    const summaryCards = document.getElementById('summaryCards');
-                    if (summaryCards) {
-                        summaryCards.style.animation = 'pulse 0.5s ease-in-out';
-                        setTimeout(() => {
-                            summaryCards.style.animation = '';
-                        }, 500);
-                    }
-                    
+                    showStatus(`🔄 Đã cập nhật ${rawData.length} dòng dữ liệu (${lastSyncTime.toLocaleTimeString()})`, 'success');
                     setTimeout(hideStatus, 2000);
                 } else if (!isAutoSync) {
                     showStatus(`✅ Đã tải thành công ${rawData.length} dòng dữ liệu`, 'success');
@@ -558,14 +515,11 @@
                     }
                     
                     try {
-                        const timestamp = new Date().getTime();
-                        const directUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/so_giao_nhan?key=${API_KEY}&_t=${timestamp}`;
+                        const directUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/so_giao_nhan?key=${API_KEY}`;
                         const directResponse = await fetch(directUrl, {
                             mode: 'cors',
-                            cache: 'no-cache',
                             headers: {
                                 'Accept': 'application/json',
-                                'Cache-Control': 'no-cache'
                             }
                         });
                         
@@ -747,9 +701,8 @@
             
             document.getElementById('results').classList.remove('hidden');
             
-            // Enable buttons
+            // Enable export button
             document.getElementById('exportExcel').disabled = false;
-            document.getElementById('syncNow').disabled = false;
         }
 
         function displaySummaryCards() {
@@ -946,32 +899,6 @@
                 displayResults();
             }
         });
-
-        // Sync now function
-        async function syncNow() {
-            const button = document.getElementById('syncNow');
-            const originalText = button.textContent;
-            
-            // Visual feedback
-            button.textContent = '⚡ Đang đồng bộ...';
-            button.disabled = true;
-            button.classList.add('pulsing');
-            
-            try {
-                await loadSheetData(false); // Force full sync với loading
-                showStatus('⚡ Đồng bộ ngay lập tức thành công!', 'success');
-                setTimeout(hideStatus, 2000);
-            } catch (error) {
-                showStatus('❌ Lỗi đồng bộ ngay lập tức', 'error');
-            } finally {
-                // Restore button
-                setTimeout(() => {
-                    button.textContent = originalText;
-                    button.disabled = false;
-                    button.classList.remove('pulsing');
-                }, 1000);
-            }
-        }
 
         // Auto sync functions
         function toggleAutoSync() {
