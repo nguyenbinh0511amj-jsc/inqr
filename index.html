@@ -116,6 +116,46 @@
             background: linear-gradient(135deg, #38a169 0%, #2f855a 100%) !important;
         }
 
+        .auto-sync-btn {
+            background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%) !important;
+            margin-left: 10px;
+        }
+
+        .auto-sync-btn:hover {
+            background: linear-gradient(135deg, #2c5282 0%, #2a4365 100%) !important;
+        }
+
+        .auto-sync-btn.active {
+            background: linear-gradient(135deg, #38a169 0%, #2f855a 100%) !important;
+        }
+
+        .sync-status {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: #4a5568;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #3182ce;
+        }
+
+        .sync-status.active {
+            border-left-color: #38a169;
+            background: rgba(72, 187, 120, 0.1);
+        }
+
+        select {
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            margin-left: 10px;
+        }
+
         .status {
             padding: 15px;
             border-radius: 8px;
@@ -280,23 +320,13 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-
-        .pulsing {
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>📊 Phân tích số liệu giao nhận</h1>
-            <p>Thống kê số lượng nhận theo tên chi tiết và tháng (Tự động đồng bộ mỗi 10 giây)</p>
+            <p>Thống kê số lượng nhận theo tên chi tiết và tháng</p>
         </div>
 
         <div class="controls">
@@ -322,15 +352,34 @@
                     <option value="11">Tháng 11</option>
                     <option value="12">Tháng 12</option>
                 </select>
-                
+            </div>
+            
+            <div class="control-group">
                 <button id="loadData" onclick="loadSheetData()">
                     <span class="spinner hidden"></span>
                     Tải dữ liệu
                 </button>
                 
+                <button id="toggleAutoSync" onclick="toggleAutoSync()" class="auto-sync-btn">
+                    🔄 Bật tự động
+                </button>
+                
+                <select id="syncInterval" onchange="updateSyncInterval()">
+                    <option value="30">30 giây</option>
+                    <option value="60" selected>1 phút</option>
+                    <option value="300">5 phút</option>
+                    <option value="600">10 phút</option>
+                    <option value="1800">30 phút</option>
+                </select>
+                
                 <button id="exportExcel" onclick="exportToExcel()" class="export-btn" disabled>
                     📊 Xuất Excel
                 </button>
+            </div>
+            
+            <div id="syncStatus" class="sync-status hidden">
+                <span id="syncStatusText">🔄 Tự động đồng bộ: TẮT</span>
+                <span id="lastSyncText"></span>
             </div>
         </div>
 
@@ -369,7 +418,6 @@
         let currentChart = null;
         let autoSyncInterval = null;
         let lastSyncTime = null;
-        const AUTO_SYNC_INTERVAL = 10000; // 10 giây tự động đồng bộ
         
         // API Key và Sheet ID được gán cố định
         const API_KEY = "AIzaSyCrC_DfD_DrpjzjO5ENvqTMHBA4FIDBiP0";
@@ -406,116 +454,98 @@
             }
 
             try {
-                const timestamp = new Date().getTime();
+                // Sử dụng CORS proxy để tránh lỗi CORS
+                const proxyUrl = 'https://api.allorigins.win/raw?url=';
+                const targetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/so_giao_nhan?key=${API_KEY}`;
+                const finalUrl = proxyUrl + encodeURIComponent(targetUrl);
                 
-                // Thử nhiều phương pháp kết nối
-                const methods = [
-                    // Phương pháp 1: CORS proxy
-                    {
-                        url: `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/so_giao_nhan?key=${API_KEY}&_t=${timestamp}`)}`,
-                        options: { cache: 'no-cache' }
-                    },
-                    // Phương pháp 2: Proxy khác
-                    {
-                        url: `https://cors-anywhere.herokuapp.com/https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/so_giao_nhan?key=${API_KEY}&_t=${timestamp}`,
-                        options: { 
-                            cache: 'no-cache',
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest'
-                            }
-                        }
-                    },
-                    // Phương pháp 3: Trực tiếp
-                    {
-                        url: `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/so_giao_nhan?key=${API_KEY}&_t=${timestamp}`,
-                        options: {
-                            mode: 'cors',
-                            cache: 'no-cache',
-                            headers: {
-                                'Accept': 'application/json',
-                                'Cache-Control': 'no-cache'
-                            }
-                        }
-                    }
-                ];
-
-                let lastError = null;
-                
-                for (let i = 0; i < methods.length; i++) {
-                    try {
-                        if (!isAutoSync) {
-                            console.log(`🔗 Trying method ${i + 1}:`, methods[i].url);
-                        }
-                        
-                        const response = await fetch(methods[i].url, methods[i].options);
-                        
-                        if (!response.ok) {
-                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                        }
-                        
-                        const data = await response.json();
-                        
-                        if (!data.values || data.values.length < 2) {
-                            throw new Error('Không tìm thấy dữ liệu trong sheet');
-                        }
-
-                        const newRawData = parseSheetData(data.values);
-                        
-                        if (newRawData.length === 0) {
-                            throw new Error('Không có dữ liệu hợp lệ để phân tích');
-                        }
-                        
-                        const hasDataChanged = isAutoSync && (
-                            !rawData.length || 
-                            newRawData.length !== rawData.length ||
-                            JSON.stringify(newRawData.slice(-5)) !== JSON.stringify(rawData.slice(-5))
-                        );
-                        
-                        rawData = newRawData;
-                        processData();
-                        displayResults();
-                        populateYearFilter();
-                        
-                        lastSyncTime = new Date();
-                        
-                        if (isAutoSync && hasDataChanged) {
-                            showStatus(`🔄 Cập nhật mới: ${rawData.length} dòng (${lastSyncTime.toLocaleTimeString()})`, 'success');
-                            
-                            const summaryCards = document.getElementById('summaryCards');
-                            if (summaryCards) {
-                                summaryCards.style.animation = 'pulse 0.5s ease-in-out';
-                                setTimeout(() => {
-                                    summaryCards.style.animation = '';
-                                }, 500);
-                            }
-                            
-                            setTimeout(hideStatus, 2000);
-                        } else if (!isAutoSync) {
-                            showStatus(`✅ Đã tải thành công ${rawData.length} dòng dữ liệu (Phương pháp ${i + 1})`, 'success');
-                            setTimeout(hideStatus, 3000);
-                        }
-                        
-                        return; // Thành công, thoát khỏi vòng lặp
-                        
-                    } catch (error) {
-                        lastError = error;
-                        console.warn(`Method ${i + 1} failed:`, error.message);
-                        continue; // Thử phương pháp tiếp theo
-                    }
+                if (!isAutoSync) {
+                    console.log('🔗 Fetching from:', finalUrl);
                 }
                 
-                // Nếu tất cả phương pháp đều thất bại
-                throw new Error(`Tất cả phương pháp kết nối đều thất bại. Lỗi cuối: ${lastError?.message || 'Unknown error'}`);
+                const response = await fetch(finalUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`Lỗi API: ${response.status} - ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.values || data.values.length < 2) {
+                    throw new Error('Không tìm thấy dữ liệu trong sheet');
+                }
+
+                const newRawData = parseSheetData(data.values);
+                
+                if (newRawData.length === 0) {
+                    throw new Error('Không có dữ liệu hợp lệ để phân tích');
+                }
+                
+                // Kiểm tra có thay đổi dữ liệu không (cho auto sync)
+                const hasDataChanged = isAutoSync && (
+                    !rawData.length || 
+                    newRawData.length !== rawData.length ||
+                    JSON.stringify(newRawData) !== JSON.stringify(rawData)
+                );
+                
+                rawData = newRawData;
+                processData();
+                displayResults();
+                populateYearFilter();
+                
+                // Cập nhật thời gian sync cuối
+                lastSyncTime = new Date();
+                updateSyncStatus();
+                
+                if (isAutoSync && hasDataChanged) {
+                    showStatus(`🔄 Đã cập nhật ${rawData.length} dòng dữ liệu (${lastSyncTime.toLocaleTimeString()})`, 'success');
+                    setTimeout(hideStatus, 2000);
+                } else if (!isAutoSync) {
+                    showStatus(`✅ Đã tải thành công ${rawData.length} dòng dữ liệu`, 'success');
+                    setTimeout(hideStatus, 3000);
+                }
 
             } catch (error) {
                 console.error('❌ Lỗi:', error);
                 
-                if (!isAutoSync) {
-                    if (error.message.includes('fetch')) {
-                        showStatus('❌ Lỗi kết nối. Vui lòng kiểm tra:\n1. Kết nối internet\n2. Google Sheets có public không\n3. Thử lại sau vài giây', 'error');
-                    } else {
-                        showStatus(`❌ ${error.message}`, 'error');
+                // Nếu proxy không hoạt động, thử trực tiếp
+                if (error.message.includes('fetch')) {
+                    if (!isAutoSync) {
+                        showStatus('🔄 Thử phương pháp khác...', 'loading');
                     }
+                    
+                    try {
+                        const directUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/so_giao_nhan?key=${API_KEY}`;
+                        const directResponse = await fetch(directUrl, {
+                            mode: 'cors',
+                            headers: {
+                                'Accept': 'application/json',
+                            }
+                        });
+                        
+                        if (directResponse.ok) {
+                            const directData = await directResponse.json();
+                            rawData = parseSheetData(directData.values);
+                            processData();
+                            displayResults();
+                            populateYearFilter();
+                            
+                            lastSyncTime = new Date();
+                            updateSyncStatus();
+                            
+                            if (!isAutoSync) {
+                                showStatus(`✅ Thành công! ${rawData.length} dòng dữ liệu`, 'success');
+                                setTimeout(hideStatus, 3000);
+                            }
+                            return;
+                        }
+                    } catch (directError) {
+                        console.error('Direct fetch error:', directError);
+                    }
+                }
+                
+                if (!isAutoSync) {
+                    showStatus(`❌ ${error.message}`, 'error');
                 }
             } finally {
                 if (!isAutoSync) {
@@ -530,6 +560,7 @@
             
             console.log('📋 Headers found:', headers);
             
+            // Mapping theo cấu trúc thực tế của sheet
             const columnMap = {
                 order_kd: 0,
                 ten_chi_tiet: 1, 
@@ -548,14 +579,18 @@
                 trang_thai: 14,
                 update: 15
             };
+            
+            console.log('🔍 Looking for columns:', columnMap);
 
             for (let i = 1; i < values.length; i++) {
                 const row = values[i];
                 
-                if (row.length > 11) {
+                if (row.length > 11) { // Đảm bảo có đủ cột
                     const tenChiTiet = row[columnMap.ten_chi_tiet]?.toString().trim();
                     const ngayNhan = row[columnMap.ngay_nhan]?.toString().trim();
                     const slNhan = parseFloat(row[columnMap.sl_nhan]) || 0;
+                    
+                    console.log(`Row ${i}:`, { tenChiTiet, ngayNhan, slNhan });
                     
                     if (tenChiTiet && ngayNhan && slNhan > 0) {
                         const date = parseDate(ngayNhan);
@@ -577,21 +612,22 @@
         }
 
         function parseDate(dateStr) {
+            // Thử các định dạng ngày khác nhau
             const formats = [
-                /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
-                /^(\d{4})-(\d{1,2})-(\d{1,2})$/,
-                /^(\d{1,2})-(\d{1,2})-(\d{4})$/,
+                /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, // dd/mm/yyyy
+                /^(\d{4})-(\d{1,2})-(\d{1,2})$/, // yyyy-mm-dd
+                /^(\d{1,2})-(\d{1,2})-(\d{4})$/, // dd-mm-yyyy
             ];
             
             for (let format of formats) {
                 const match = dateStr.match(format);
                 if (match) {
                     let day, month, year;
-                    if (format === formats[1]) {
+                    if (format === formats[1]) { // yyyy-mm-dd
                         year = parseInt(match[1]);
                         month = parseInt(match[2]);
                         day = parseInt(match[3]);
-                    } else {
+                    } else { // dd/mm/yyyy or dd-mm-yyyy
                         day = parseInt(match[1]);
                         month = parseInt(match[2]);
                         year = parseInt(match[3]);
@@ -604,6 +640,7 @@
                 }
             }
             
+            // Thử Date constructor trực tiếp
             const date = new Date(dateStr);
             return isNaN(date.getTime()) ? null : date;
         }
@@ -622,9 +659,11 @@
                 filteredData = filteredData.filter(item => item.month.toString() === monthFilter);
             }
             
+            // Nhóm dữ liệu theo tên chi tiết và tháng/năm - GỘP CÙNG TÊN TRONG CÙNG THÁNG
             const grouped = {};
             
             filteredData.forEach(item => {
+                // Key chỉ dựa trên tên chi tiết + tháng/năm (không phân biệt ngày cụ thể)
                 const key = `${item.tenChiTiet}|${item.month}/${item.year}`;
                 
                 if (!grouped[key]) {
@@ -634,13 +673,14 @@
                         month: item.month,
                         year: item.year,
                         totalSlNhan: 0,
-                        count: 0
+                        count: 0 // Đếm số lần xuất hiện
                     };
                 }
                 grouped[key].totalSlNhan += item.slNhan;
                 grouped[key].count += 1;
             });
             
+            // Chuyển về array và sắp xếp
             processedData = Object.values(grouped).sort((a, b) => {
                 if (a.year !== b.year) return b.year - a.year;
                 if (a.month !== b.month) return b.month - a.month;
@@ -654,14 +694,15 @@
             displaySummaryCards();
             displayTable();
             
+            // Delay chart display để table render trước
             setTimeout(() => {
                 displayChart();
             }, 100);
             
             document.getElementById('results').classList.remove('hidden');
-            document.getElementById('exportExcel').disabled = false;
             
-            startAutoSync();
+            // Enable export button
+            document.getElementById('exportExcel').disabled = false;
         }
 
         function displaySummaryCards() {
@@ -702,6 +743,7 @@
                 row.insertCell(0).textContent = item.tenChiTiet;
                 row.insertCell(1).textContent = item.monthYear;
                 
+                // Hiển thị tổng số lượng và số lần xuất hiện (nếu > 1)
                 const slCell = row.insertCell(2);
                 if (item.count > 1) {
                     slCell.innerHTML = `<strong>${item.totalSlNhan.toLocaleString()}</strong> <small style="color: #666;">(${item.count} lần)</small>`;
@@ -718,6 +760,7 @@
                 currentChart.destroy();
             }
             
+            // Nhóm dữ liệu theo tháng/năm
             const monthlyData = {};
             processedData.forEach(item => {
                 if (!monthlyData[item.monthYear]) {
@@ -735,6 +778,7 @@
             
             const chartData = sortedMonths.map(month => monthlyData[month]);
             
+            // Tạo màu sắc khác nhau cho mỗi tháng
             const colors = [
                 '#667eea', '#764ba2', '#f093fb', '#f5576c',
                 '#4facfe', '#00f2fe', '#43e97b', '#38f9d7',
@@ -817,6 +861,7 @@
                 }
             });
             
+            // Set chart container height để khớp với bảng
             const chartContainer = document.querySelector('.chart-container');
             const tableContainer = document.querySelector('.table-container');
             if (tableContainer) {
@@ -829,6 +874,7 @@
             const years = [...new Set(rawData.map(item => item.year))].sort((a, b) => b - a);
             const yearSelect = document.getElementById('yearFilter');
             
+            // Clear existing options except "Tất cả các năm"
             yearSelect.innerHTML = '<option value="">Tất cả các năm</option>';
             
             years.forEach(year => {
@@ -839,25 +885,7 @@
             });
         }
 
-        function startAutoSync() {
-            if (autoSyncInterval) {
-                clearInterval(autoSyncInterval);
-            }
-            
-            console.log('🟢 Auto sync started: 10s interval');
-            autoSyncInterval = setInterval(() => {
-                loadSheetData(true);
-            }, AUTO_SYNC_INTERVAL);
-        }
-
-        function stopAutoSync() {
-            if (autoSyncInterval) {
-                clearInterval(autoSyncInterval);
-                autoSyncInterval = null;
-                console.log('🔴 Auto sync stopped');
-            }
-        }
-
+        // Event listeners for filters
         document.getElementById('yearFilter').addEventListener('change', () => {
             if (rawData.length > 0) {
                 processData();
@@ -872,6 +900,66 @@
             }
         });
 
+        // Auto sync functions
+        function toggleAutoSync() {
+            const button = document.getElementById('toggleAutoSync');
+            const syncStatus = document.getElementById('syncStatus');
+            
+            if (autoSyncInterval) {
+                // Tắt auto sync
+                clearInterval(autoSyncInterval);
+                autoSyncInterval = null;
+                button.textContent = '🔄 Bật tự động';
+                button.classList.remove('active');
+                syncStatus.classList.remove('active');
+                console.log('🔴 Auto sync disabled');
+            } else {
+                // Bật auto sync
+                if (rawData.length === 0) {
+                    showStatus('Vui lòng tải dữ liệu trước khi bật tự động đồng bộ', 'error');
+                    return;
+                }
+                
+                const intervalSeconds = parseInt(document.getElementById('syncInterval').value);
+                autoSyncInterval = setInterval(() => {
+                    loadSheetData(true);
+                }, intervalSeconds * 1000);
+                
+                button.textContent = '⏹️ Tắt tự động';
+                button.classList.add('active');
+                syncStatus.classList.add('active');
+                console.log(`🟢 Auto sync enabled: ${intervalSeconds}s interval`);
+            }
+            
+            updateSyncStatus();
+            syncStatus.classList.remove('hidden');
+        }
+
+        function updateSyncInterval() {
+            if (autoSyncInterval) {
+                // Restart với interval mới
+                toggleAutoSync(); // Tắt
+                toggleAutoSync(); // Bật lại với interval mới
+            }
+        }
+
+        function updateSyncStatus() {
+            const syncStatusText = document.getElementById('syncStatusText');
+            const lastSyncText = document.getElementById('lastSyncText');
+            const intervalSeconds = parseInt(document.getElementById('syncInterval').value);
+            
+            if (autoSyncInterval) {
+                syncStatusText.textContent = `🟢 Tự động đồng bộ: BẬT (${intervalSeconds}s)`;
+            } else {
+                syncStatusText.textContent = '🔴 Tự động đồng bộ: TẮT';
+            }
+            
+            if (lastSyncTime) {
+                lastSyncText.textContent = `Cập nhật cuối: ${lastSyncTime.toLocaleString('vi-VN')}`;
+            } else {
+                lastSyncText.textContent = '';
+            }
+        }
         function exportToExcel() {
             console.log('🔄 Bắt đầu xuất Excel...');
             console.log('📊 ProcessedData length:', processedData.length);
@@ -884,15 +972,19 @@
             try {
                 console.log('📝 Tạo dữ liệu Excel...');
                 
+                // Kiểm tra XLSX library
                 if (typeof XLSX === 'undefined') {
                     showStatus('❌ Lỗi: Thư viện XLSX chưa được tải', 'error');
                     return;
                 }
                 
+                // Tạo dữ liệu cho Excel
                 const excelData = [];
                 
+                // Header
                 excelData.push(['STT', 'Tên chi tiết', 'Tháng/Năm', 'Tổng SL nhận', 'Số lần xuất hiện']);
                 
+                // Data rows
                 processedData.forEach((item, index) => {
                     excelData.push([
                         index + 1,
@@ -905,13 +997,14 @@
                 
                 console.log('📋 Excel data prepared:', excelData.length, 'rows');
                 
+                // Tạo summary data
                 const totalItems = processedData.length;
                 const totalQuantity = processedData.reduce((sum, item) => sum + item.totalSlNhan, 0);
                 const uniqueItems = new Set(processedData.map(item => item.tenChiTiet)).size;
                 const uniqueMonths = new Set(processedData.map(item => item.monthYear)).size;
                 
                 const summaryData = [
-                    ['BÁO CÁO TỔNG HỢP DỮ LIỆU GIAO NHẬN'],
+                    ['BÁOCÁO TỔNG HỢP DỮ LIỆU GIAO NHẬN'],
                     [''],
                     ['Tổng số bản ghi:', totalItems],
                     ['Tổng số lượng:', totalQuantity],
@@ -922,17 +1015,20 @@
                 
                 console.log('📈 Summary data prepared');
                 
+                // Tạo workbook
                 const wb = XLSX.utils.book_new();
                 
+                // Tạo worksheets
                 const ws1 = XLSX.utils.aoa_to_sheet(excelData);
                 const ws2 = XLSX.utils.aoa_to_sheet(summaryData);
                 
+                // Set column widths
                 ws1['!cols'] = [
-                    { width: 5 },
-                    { width: 25 },
-                    { width: 12 },
-                    { width: 15 },
-                    { width: 18 }
+                    { width: 5 },  // STT
+                    { width: 25 }, // Tên chi tiết
+                    { width: 12 }, // Tháng/Năm
+                    { width: 15 }, // Tổng SL
+                    { width: 18 }  // Số lần
                 ];
                 
                 ws2['!cols'] = [
@@ -940,11 +1036,13 @@
                     { width: 15 }
                 ];
                 
+                // Add worksheets
                 XLSX.utils.book_append_sheet(wb, ws1, "Dữ liệu chi tiết");
                 XLSX.utils.book_append_sheet(wb, ws2, "Tổng quan");
                 
                 console.log('📚 Workbook created');
                 
+                // Tạo tên file
                 const now = new Date();
                 const dateStr = now.toLocaleDateString('vi-VN').replace(/\//g, '-');
                 const timeStr = now.toLocaleTimeString('vi-VN').replace(/:/g, '-');
@@ -952,6 +1050,7 @@
                 
                 console.log('💾 Saving file:', filename);
                 
+                // Xuất file
                 XLSX.writeFile(wb, filename);
                 
                 showStatus(`✅ Đã xuất thành công: ${filename}`, 'success');
@@ -963,10 +1062,16 @@
             }
         }
 
+        // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
-            stopAutoSync();
+            if (autoSyncInterval) {
+                clearInterval(autoSyncInterval);
+            }
         });
 
+        // No enter key support needed since no input fields
+        
+        // Test XLSX library on page load
         window.addEventListener('load', () => {
             console.log('🔍 Checking XLSX library...');
             if (typeof XLSX !== 'undefined') {
