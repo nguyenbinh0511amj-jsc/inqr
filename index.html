@@ -982,28 +982,21 @@
                 // Tạo workbook mới
                 const wb = XLSX.utils.book_new();
                 
-                // === SHEET 1: TỔNG QUAN ===
-                const summaryData = createSummarySheet();
-                const ws_summary = XLSX.utils.aoa_to_sheet(summaryData);
-                
-                // Định dạng cho summary sheet
-                formatSummarySheet(ws_summary);
-                
-                // === SHEET 2: DỮ LIỆU CHI TIẾT ===
+                // === SHEET 1: DỮ LIỆU CHI TIẾT ===
                 const detailData = createDetailSheet();
                 const ws_detail = XLSX.utils.aoa_to_sheet(detailData);
                 
                 // Định dạng cho detail sheet
                 formatDetailSheet(ws_detail);
                 
-                // === SHEET 3: THỐNG KÊ THEO THÁNG ===
+                // === SHEET 2: THỐNG KÊ THEO THÁNG ===
                 const monthlyData = createMonthlySheet();
                 const ws_monthly = XLSX.utils.aoa_to_sheet(monthlyData);
                 
                 // Định dạng cho monthly sheet
                 formatMonthlySheet(ws_monthly);
                 
-                // === SHEET 4: TOP ITEMS ===
+                // === SHEET 3: TOP ITEMS ===
                 const topItemsData = createTopItemsSheet();
                 const ws_topitems = XLSX.utils.aoa_to_sheet(topItemsData);
                 
@@ -1011,7 +1004,6 @@
                 formatTopItemsSheet(ws_topitems);
                 
                 // Thêm tất cả sheets vào workbook
-                XLSX.utils.book_append_sheet(wb, ws_summary, "📊 Tổng quan");
                 XLSX.utils.book_append_sheet(wb, ws_detail, "📋 Dữ liệu chi tiết");
                 XLSX.utils.book_append_sheet(wb, ws_monthly, "📅 Theo tháng");
                 XLSX.utils.book_append_sheet(wb, ws_topitems, "🏆 Top sản phẩm");
@@ -1036,64 +1028,6 @@
                 console.error('❌ Export error:', error);
                 showStatus(`❌ Lỗi xuất Excel: ${error.message}`, 'error');
             }
-        }
-
-        function createSummarySheet() {
-            const totalItems = processedData.length;
-            const totalQuantity = processedData.reduce((sum, item) => sum + item.totalSlNhan, 0);
-            const uniqueItems = new Set(processedData.map(item => item.tenChiTiet)).size;
-            const uniqueMonths = new Set(processedData.map(item => item.monthYear)).size;
-            
-            const currentFilters = [];
-            const yearFilter = document.getElementById('yearFilter').value;
-            const monthFilter = document.getElementById('monthFilter').value;
-            
-            if (yearFilter) currentFilters.push(`Năm: ${yearFilter}`);
-            if (monthFilter) currentFilters.push(`Tháng: ${monthFilter}`);
-            
-            return [
-                ['BÁO CÁO TỔNG HỢP DỮ LIỆU GIAO NHẬN'],
-                [''],
-                ['📊 THÔNG TIN TỔNG QUAN'],
-                [''],
-                ['Chỉ số', 'Giá trị', 'Mô tả'],
-                ['Tổng số bản ghi', totalItems, 'Số dòng dữ liệu sau khi gộp'],
-                ['Tổng số lượng', totalQuantity, 'Tổng cộng tất cả SL nhận'],
-                ['Số mặt hàng', uniqueItems, 'Số lượng tên chi tiết khác nhau'],
-                ['Số tháng', uniqueMonths, 'Số tháng có dữ liệu'],
-                [''],
-                ['🔍 BỘ LỌC ÁP DỤNG'],
-                [''],
-                ['Loại lọc', 'Giá trị'],
-                ['Bộ lọc hiện tại', currentFilters.length > 0 ? currentFilters.join(', ') : 'Tất cả dữ liệu'],
-                [''],
-                ['📅 THÔNG TIN XUẤT BÁO CÁO'],
-                [''],
-                ['Thông tin', 'Chi tiết'],
-                ['Thời gian xuất', new Date().toLocaleString('vi-VN')],
-                ['Người xuất', 'Hệ thống phân tích giao nhận'],
-                ['Phiên bản', 'v2.0 - Enhanced'],
-                [''],
-                ['📈 PHÂN TÍCH NHANH'],
-                [''],
-                ['Trung bình SL/bản ghi', Math.round(totalQuantity / totalItems * 100) / 100],
-                ['Trung bình SL/mặt hàng', Math.round(totalQuantity / uniqueItems * 100) / 100],
-                ['Trung bình SL/tháng', Math.round(totalQuantity / uniqueMonths * 100) / 100]
-            ];
-        }
-
-        function formatSummarySheet(ws) {
-            // Set column widths
-            ws['!cols'] = [
-                { width: 30 },  // Column A
-                { width: 20 },  // Column B  
-                { width: 40 }   // Column C
-            ];
-            
-            // Merge cells cho tiêu đề
-            ws['!merges'] = [
-                { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } } // Merge A1:C1
-            ];
         }
 
         function createDetailSheet() {
