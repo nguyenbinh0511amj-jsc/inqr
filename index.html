@@ -147,15 +147,6 @@
             background: rgba(72, 187, 120, 0.1);
         }
 
-        select {
-            padding: 12px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            margin-left: 10px;
-        }
-
         .status {
             padding: 15px;
             border-radius: 8px;
@@ -200,6 +191,135 @@
                 max-width: 350px;
                 margin: 0 auto;
             }
+        }
+
+        .analysis-section {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .percentage-chart {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .percentage-chart h3 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            text-align: center;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .chart-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .chart-bar-label {
+            min-width: 80px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .chart-bar-visual {
+            flex: 1;
+            height: 25px;
+            background: #f7fafc;
+            border-radius: 12px;
+            margin: 0 15px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+
+        .chart-bar-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 11px;
+            transition: width 0.8s ease-in-out;
+            position: relative;
+        }
+
+        .chart-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .chart-bar-value {
+            min-width: 60px;
+            text-align: right;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .trend-analysis {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .trend-analysis h3 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            text-align: center;
+            border-bottom: 2px solid #48bb78;
+            padding-bottom: 10px;
+        }
+
+        .trend-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .trend-item:last-child {
+            border-bottom: none;
+        }
+
+        .trend-label {
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .trend-value {
+            font-weight: bold;
+            color: #48bb78;
+        }
+
+        .trend-value.highest {
+            color: #f56565;
+        }
+
+        .trend-value.lowest {
+            color: #4299e1;
         }
 
         .chart-container {
@@ -388,6 +508,18 @@
         <div id="summaryCards" class="summary-cards hidden"></div>
 
         <div id="results" class="results hidden">
+            <div class="analysis-section">
+                <div class="percentage-chart">
+                    <h3>📊 Biểu đồ tỷ lệ % theo tháng</h3>
+                    <div id="percentageChart"></div>
+                </div>
+                
+                <div class="trend-analysis">
+                    <h3>📈 Phân tích xu hướng</h3>
+                    <div id="trendAnalysis"></div>
+                </div>
+            </div>
+            
             <div class="chart-container">
                 <h3>📈 Biểu đồ theo tháng</h3>
                 <canvas id="monthlyChart"></canvas>
@@ -692,6 +824,8 @@
 
         function displayResults() {
             displaySummaryCards();
+            displayPercentageChart();
+            displayTrendAnalysis();
             displayTable();
             
             // Delay chart display để table render trước
@@ -732,6 +866,98 @@
             
             document.getElementById('summaryCards').innerHTML = summaryHTML;
             document.getElementById('summaryCards').classList.remove('hidden');
+        }
+
+        function displayPercentageChart() {
+            // Nhóm dữ liệu theo tháng/năm
+            const monthlyData = {};
+            processedData.forEach(item => {
+                if (!monthlyData[item.monthYear]) {
+                    monthlyData[item.monthYear] = 0;
+                }
+                monthlyData[item.monthYear] += item.totalSlNhan;
+            });
+            
+            const sortedMonths = Object.keys(monthlyData).sort((a, b) => {
+                const [monthA, yearA] = a.split('/').map(Number);
+                const [monthB, yearB] = b.split('/').map(Number);
+                if (yearA !== yearB) return yearA - yearB;
+                return monthA - monthB;
+            });
+            
+            const grandTotal = Object.values(monthlyData).reduce((sum, val) => sum + val, 0);
+            
+            let chartHTML = '';
+            
+            sortedMonths.forEach(month => {
+                const total = monthlyData[month];
+                const percentage = Math.round(total / grandTotal * 10000) / 100;
+                
+                chartHTML += `
+                    <div class="chart-bar">
+                        <div class="chart-bar-label">${month}</div>
+                        <div class="chart-bar-visual">
+                            <div class="chart-bar-fill" style="width: ${percentage}%"></div>
+                        </div>
+                        <div class="chart-bar-value">${percentage}%</div>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('percentageChart').innerHTML = chartHTML;
+        }
+
+        function displayTrendAnalysis() {
+            // Nhóm dữ liệu theo tháng/năm
+            const monthlyData = {};
+            const monthlyItems = {};
+            
+            processedData.forEach(item => {
+                if (!monthlyData[item.monthYear]) {
+                    monthlyData[item.monthYear] = 0;
+                    monthlyItems[item.monthYear] = new Set();
+                }
+                monthlyData[item.monthYear] += item.totalSlNhan;
+                monthlyItems[item.monthYear].add(item.tenChiTiet);
+            });
+            
+            const grandTotal = Object.values(monthlyData).reduce((sum, val) => sum + val, 0);
+            const values = Object.values(monthlyData);
+            const maxMonth = Object.keys(monthlyData).find(key => monthlyData[key] === Math.max(...values));
+            const minMonth = Object.keys(monthlyData).find(key => monthlyData[key] === Math.min(...values));
+            
+            const avgPerMonth = Math.round(grandTotal / Object.keys(monthlyData).length);
+            const totalItems = new Set(processedData.map(item => item.tenChiTiet)).size;
+            const totalRecords = processedData.length;
+            
+            const trendHTML = `
+                <div class="trend-item">
+                    <div class="trend-label">Tháng cao nhất:</div>
+                    <div class="trend-value highest">${maxMonth} (${monthlyData[maxMonth].toLocaleString()})</div>
+                </div>
+                <div class="trend-item">
+                    <div class="trend-label">Tháng thấp nhất:</div>
+                    <div class="trend-value lowest">${minMonth} (${monthlyData[minMonth].toLocaleString()})</div>
+                </div>
+                <div class="trend-item">
+                    <div class="trend-label">Trung bình/tháng:</div>
+                    <div class="trend-value">${avgPerMonth.toLocaleString()}</div>
+                </div>
+                <div class="trend-item">
+                    <div class="trend-label">Tổng sản phẩm:</div>
+                    <div class="trend-value">${totalItems.toLocaleString()}</div>
+                </div>
+                <div class="trend-item">
+                    <div class="trend-label">Tổng bản ghi:</div>
+                    <div class="trend-value">${totalRecords.toLocaleString()}</div>
+                </div>
+                <div class="trend-item">
+                    <div class="trend-label">TB SL/bản ghi:</div>
+                    <div class="trend-value">${Math.round(grandTotal / totalRecords)}</div>
+                </div>
+            `;
+            
+            document.getElementById('trendAnalysis').innerHTML = trendHTML;
         }
 
         function displayTable() {
@@ -1210,8 +1436,6 @@
                 [''],
                 ['Hạng', 'Tên chi tiết', 'Tổng SL', 'Số tháng', 'Số lần', 'TB/tháng', 'TB/lần']
             ];
-            
-            const grandTotal = Object.values(itemTotals).reduce((sum, item) => sum + item.total, 0);
             
             sortedItems.forEach(([itemName, itemData], index) => {
                 const avgPerMonth = Math.round(itemData.total / itemData.months.size * 100) / 100;
