@@ -960,6 +960,7 @@
                 lastSyncText.textContent = '';
             }
         }
+
         function exportToExcel() {
             console.log('🔄 Bắt đầu xuất Excel...');
             console.log('📊 ProcessedData length:', processedData.length);
@@ -978,69 +979,44 @@
                     return;
                 }
                 
-                // Tạo dữ liệu cho Excel
-                const excelData = [];
-                
-                // Header
-                excelData.push(['STT', 'Tên chi tiết', 'Tháng/Năm', 'Tổng SL nhận', 'Số lần xuất hiện']);
-                
-                // Data rows
-                processedData.forEach((item, index) => {
-                    excelData.push([
-                        index + 1,
-                        item.tenChiTiet,
-                        item.monthYear,
-                        item.totalSlNhan,
-                        item.count || 1
-                    ]);
-                });
-                
-                console.log('📋 Excel data prepared:', excelData.length, 'rows');
-                
-                // Tạo summary data
-                const totalItems = processedData.length;
-                const totalQuantity = processedData.reduce((sum, item) => sum + item.totalSlNhan, 0);
-                const uniqueItems = new Set(processedData.map(item => item.tenChiTiet)).size;
-                const uniqueMonths = new Set(processedData.map(item => item.monthYear)).size;
-                
-                const summaryData = [
-                    ['BÁOCÁO TỔNG HỢP DỮ LIỆU GIAO NHẬN'],
-                    [''],
-                    ['Tổng số bản ghi:', totalItems],
-                    ['Tổng số lượng:', totalQuantity],
-                    ['Số mặt hàng:', uniqueItems],
-                    ['Số tháng:', uniqueMonths],
-                    ['Thời gian xuất:', new Date().toLocaleString('vi-VN')]
-                ];
-                
-                console.log('📈 Summary data prepared');
-                
-                // Tạo workbook
+                // Tạo workbook mới
                 const wb = XLSX.utils.book_new();
                 
-                // Tạo worksheets
-                const ws1 = XLSX.utils.aoa_to_sheet(excelData);
-                const ws2 = XLSX.utils.aoa_to_sheet(summaryData);
+                // === SHEET 1: TỔNG QUAN ===
+                const summaryData = createSummarySheet();
+                const ws_summary = XLSX.utils.aoa_to_sheet(summaryData);
                 
-                // Set column widths
-                ws1['!cols'] = [
-                    { width: 5 },  // STT
-                    { width: 25 }, // Tên chi tiết
-                    { width: 12 }, // Tháng/Năm
-                    { width: 15 }, // Tổng SL
-                    { width: 18 }  // Số lần
-                ];
+                // Định dạng cho summary sheet
+                formatSummarySheet(ws_summary);
                 
-                ws2['!cols'] = [
-                    { width: 30 },
-                    { width: 15 }
-                ];
+                // === SHEET 2: DỮ LIỆU CHI TIẾT ===
+                const detailData = createDetailSheet();
+                const ws_detail = XLSX.utils.aoa_to_sheet(detailData);
                 
-                // Add worksheets
-                XLSX.utils.book_append_sheet(wb, ws1, "Dữ liệu chi tiết");
-                XLSX.utils.book_append_sheet(wb, ws2, "Tổng quan");
+                // Định dạng cho detail sheet
+                formatDetailSheet(ws_detail);
                 
-                console.log('📚 Workbook created');
+                // === SHEET 3: THỐNG KÊ THEO THÁNG ===
+                const monthlyData = createMonthlySheet();
+                const ws_monthly = XLSX.utils.aoa_to_sheet(monthlyData);
+                
+                // Định dạng cho monthly sheet
+                formatMonthlySheet(ws_monthly);
+                
+                // === SHEET 4: TOP ITEMS ===
+                const topItemsData = createTopItemsSheet();
+                const ws_topitems = XLSX.utils.aoa_to_sheet(topItemsData);
+                
+                // Định dạng cho top items sheet
+                formatTopItemsSheet(ws_topitems);
+                
+                // Thêm tất cả sheets vào workbook
+                XLSX.utils.book_append_sheet(wb, ws_summary, "📊 Tổng quan");
+                XLSX.utils.book_append_sheet(wb, ws_detail, "📋 Dữ liệu chi tiết");
+                XLSX.utils.book_append_sheet(wb, ws_monthly, "📅 Theo tháng");
+                XLSX.utils.book_append_sheet(wb, ws_topitems, "🏆 Top sản phẩm");
+                
+                console.log('📚 Workbook created with formatting');
                 
                 // Tạo tên file
                 const now = new Date();
@@ -1062,6 +1038,239 @@
             }
         }
 
+        function createSummarySheet() {
+            const totalItems = processedData.length;
+            const totalQuantity = processedData.reduce((sum, item) => sum + item.totalSlNhan, 0);
+            const uniqueItems = new Set(processedData.map(item => item.tenChiTiet)).size;
+            const uniqueMonths = new Set(processedData.map(item => item.monthYear)).size;
+            
+            const currentFilters = [];
+            const yearFilter = document.getElementById('yearFilter').value;
+            const monthFilter = document.getElementById('monthFilter').value;
+            
+            if (yearFilter) currentFilters.push(`Năm: ${yearFilter}`);
+            if (monthFilter) currentFilters.push(`Tháng: ${monthFilter}`);
+            
+            return [
+                ['BÁO CÁO TỔNG HỢP DỮ LIỆU GIAO NHẬN'],
+                [''],
+                ['📊 THÔNG TIN TỔNG QUAN'],
+                [''],
+                ['Chỉ số', 'Giá trị', 'Mô tả'],
+                ['Tổng số bản ghi', totalItems, 'Số dòng dữ liệu sau khi gộp'],
+                ['Tổng số lượng', totalQuantity, 'Tổng cộng tất cả SL nhận'],
+                ['Số mặt hàng', uniqueItems, 'Số lượng tên chi tiết khác nhau'],
+                ['Số tháng', uniqueMonths, 'Số tháng có dữ liệu'],
+                [''],
+                ['🔍 BỘ LỌC ÁP DỤNG'],
+                [''],
+                ['Loại lọc', 'Giá trị'],
+                ['Bộ lọc hiện tại', currentFilters.length > 0 ? currentFilters.join(', ') : 'Tất cả dữ liệu'],
+                [''],
+                ['📅 THÔNG TIN XUẤT BÁO CÁO'],
+                [''],
+                ['Thông tin', 'Chi tiết'],
+                ['Thời gian xuất', new Date().toLocaleString('vi-VN')],
+                ['Người xuất', 'Hệ thống phân tích giao nhận'],
+                ['Phiên bản', 'v2.0 - Enhanced'],
+                [''],
+                ['📈 PHÂN TÍCH NHANH'],
+                [''],
+                ['Trung bình SL/bản ghi', Math.round(totalQuantity / totalItems * 100) / 100],
+                ['Trung bình SL/mặt hàng', Math.round(totalQuantity / uniqueItems * 100) / 100],
+                ['Trung bình SL/tháng', Math.round(totalQuantity / uniqueMonths * 100) / 100]
+            ];
+        }
+
+        function formatSummarySheet(ws) {
+            // Set column widths
+            ws['!cols'] = [
+                { width: 30 },  // Column A
+                { width: 20 },  // Column B  
+                { width: 40 }   // Column C
+            ];
+            
+            // Merge cells cho tiêu đề
+            ws['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } } // Merge A1:C1
+            ];
+        }
+
+        function createDetailSheet() {
+            const data = [
+                ['BÁO CÁO CHI TIẾT DỮ LIỆU GIAO NHẬN'],
+                [''],
+                ['STT', 'Tên chi tiết', 'Tháng/Năm', 'Tổng SL nhận', 'Số lần xuất hiện', 'Trung bình/lần']
+            ];
+            
+            processedData.forEach((item, index) => {
+                const avgPerTime = Math.round(item.totalSlNhan / (item.count || 1) * 100) / 100;
+                data.push([
+                    index + 1,
+                    item.tenChiTiet,
+                    item.monthYear,
+                    item.totalSlNhan,
+                    item.count || 1,
+                    avgPerTime
+                ]);
+            });
+            
+            // Thêm dòng tổng cộng
+            const totalSL = processedData.reduce((sum, item) => sum + item.totalSlNhan, 0);
+            const totalCount = processedData.reduce((sum, item) => sum + (item.count || 1), 0);
+            
+            data.push([]);
+            data.push(['', 'TỔNG CỘNG', '', totalSL, totalCount, Math.round(totalSL / totalCount * 100) / 100]);
+            
+            return data;
+        }
+
+        function formatDetailSheet(ws) {
+            // Set column widths
+            ws['!cols'] = [
+                { width: 8 },   // STT
+                { width: 35 },  // Tên chi tiết
+                { width: 12 },  // Tháng/Năm
+                { width: 15 },  // Tổng SL
+                { width: 18 },  // Số lần
+                { width: 15 }   // Trung bình
+            ];
+            
+            // Merge cells cho tiêu đề
+            ws['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }
+            ];
+        }
+
+        function createMonthlySheet() {
+            // Nhóm dữ liệu theo tháng/năm
+            const monthlyData = {};
+            const monthlyItems = {};
+            
+            processedData.forEach(item => {
+                if (!monthlyData[item.monthYear]) {
+                    monthlyData[item.monthYear] = 0;
+                    monthlyItems[item.monthYear] = new Set();
+                }
+                monthlyData[item.monthYear] += item.totalSlNhan;
+                monthlyItems[item.monthYear].add(item.tenChiTiet);
+            });
+            
+            const sortedMonths = Object.keys(monthlyData).sort((a, b) => {
+                const [monthA, yearA] = a.split('/').map(Number);
+                const [monthB, yearB] = b.split('/').map(Number);
+                if (yearA !== yearB) return yearA - yearB;
+                return monthA - monthB;
+            });
+            
+            const data = [
+                ['THỐNG KÊ THEO THÁNG'],
+                [''],
+                ['STT', 'Tháng/Năm', 'Tổng SL nhận', 'Số mặt hàng', 'Trung bình SL/mặt hàng', '% so với tổng']
+            ];
+            
+            const grandTotal = Object.values(monthlyData).reduce((sum, val) => sum + val, 0);
+            
+            sortedMonths.forEach((month, index) => {
+                const total = monthlyData[month];
+                const itemCount = monthlyItems[month].size;
+                const avgPerItem = Math.round(total / itemCount * 100) / 100;
+                const percentage = Math.round(total / grandTotal * 10000) / 100;
+                
+                data.push([
+                    index + 1,
+                    month,
+                    total,
+                    itemCount,
+                    avgPerItem,
+                    `${percentage}%`
+                ]);
+            });
+            
+            data.push([]);
+            data.push(['', 'TỔNG CỘNG', grandTotal, '', '', '100%']);
+            
+            return data;
+        }
+
+        function formatMonthlySheet(ws) {
+            ws['!cols'] = [
+                { width: 8 },   // STT
+                { width: 12 },  // Tháng/Năm
+                { width: 15 },  // Tổng SL
+                { width: 12 },  // Số mặt hàng
+                { width: 20 },  // Trung bình
+                { width: 15 }   // %
+            ];
+            
+            ws['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }
+            ];
+        }
+
+        function createTopItemsSheet() {
+            // Tính tổng cho mỗi sản phẩm
+            const itemTotals = {};
+            processedData.forEach(item => {
+                if (!itemTotals[item.tenChiTiet]) {
+                    itemTotals[item.tenChiTiet] = {
+                        total: 0,
+                        months: new Set(),
+                        count: 0
+                    };
+                }
+                itemTotals[item.tenChiTiet].total += item.totalSlNhan;
+                itemTotals[item.tenChiTiet].months.add(item.monthYear);
+                itemTotals[item.tenChiTiet].count += (item.count || 1);
+            });
+            
+            // Sắp xếp theo tổng số lượng
+            const sortedItems = Object.entries(itemTotals)
+                .sort(([,a], [,b]) => b.total - a.total)
+                .slice(0, 20); // Top 20
+            
+            const data = [
+                ['TOP 20 SẢN PHẨM THEO SỐ LƯỢNG'],
+                [''],
+                ['Hạng', 'Tên chi tiết', 'Tổng SL', 'Số tháng', 'Số lần', 'TB/tháng', 'TB/lần']
+            ];
+            
+            const grandTotal = Object.values(itemTotals).reduce((sum, item) => sum + item.total, 0);
+            
+            sortedItems.forEach(([itemName, itemData], index) => {
+                const avgPerMonth = Math.round(itemData.total / itemData.months.size * 100) / 100;
+                const avgPerTime = Math.round(itemData.total / itemData.count * 100) / 100;
+                
+                data.push([
+                    index + 1,
+                    itemName,
+                    itemData.total,
+                    itemData.months.size,
+                    itemData.count,
+                    avgPerMonth,
+                    avgPerTime
+                ]);
+            });
+            
+            return data;
+        }
+
+        function formatTopItemsSheet(ws) {
+            ws['!cols'] = [
+                { width: 8 },   // Hạng
+                { width: 35 },  // Tên chi tiết
+                { width: 12 },  // Tổng SL
+                { width: 10 },  // Số tháng
+                { width: 10 },  // Số lần
+                { width: 12 },  // TB/tháng
+                { width: 12 }   // TB/lần
+            ];
+            
+            ws['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }
+            ];
+        }
+
         // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
             if (autoSyncInterval) {
@@ -1069,8 +1278,6 @@
             }
         });
 
-        // No enter key support needed since no input fields
-        
         // Test XLSX library on page load
         window.addEventListener('load', () => {
             console.log('🔍 Checking XLSX library...');
