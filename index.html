@@ -317,6 +317,10 @@
                     <span class="spinner hidden"></span>
                     Tải dữ liệu
                 </button>
+                
+                <button id="exportExcel" onclick="exportToExcel()" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); margin-left: 10px;" disabled>
+                    📊 Xuất Excel
+                </button>
             </div>
         </div>
 
@@ -612,7 +616,7 @@
             
             const summaryHTML = `
                 <div class="summary-card">
-                    <h4>Tổng số lần nhận</h4>
+                    <h4>Tổng số bản ghi</h4>
                     <div class="value">${totalItems.toLocaleString()}</div>
                 </div>
                 <div class="summary-card">
@@ -620,7 +624,7 @@
                     <div class="value">${totalQuantity.toLocaleString()}</div>
                 </div>
                 <div class="summary-card">
-                    <h4>Số lượng chi tiết</h4>
+                    <h4>Số mặt hàng</h4>
                     <div class="value">${uniqueItems.toLocaleString()}</div>
                 </div>
                 <div class="summary-card">
