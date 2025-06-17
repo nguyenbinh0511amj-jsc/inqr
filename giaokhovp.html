@@ -407,6 +407,9 @@
                 <button class="btn btn-primary" onclick="loadData()">
                     🔄 Tải dữ liệu
                 </button>
+                <button class="btn btn-clear" onclick="clearDateFilter()" id="clearDateBtn" style="display: none;">
+                    🗑️ Xóa lọc ngày
+                </button>
                 <button class="btn btn-success" onclick="exportToExcel()" disabled id="exportBtn">
                     📊 Xuất Excel
                 </button>
@@ -521,24 +524,42 @@
             if (!dateStr) return null;
             
             // Thử các định dạng khác nhau
-            const formats = [
-                /^\d{4}-\d{2}-\d{2}$/, // YYYY-MM-DD
-                /^\d{2}\/\d{2}\/\d{4}$/, // DD/MM/YYYY
-                /^\d{1,2}\/\d{1,2}\/\d{4}$/, // D/M/YYYY hoặc DD/M/YYYY
-            ];
-            
             let parsedDate = null;
             
-            if (formats[0].test(dateStr)) {
-                parsedDate = new Date(dateStr);
-            } else if (formats[1].test(dateStr) || formats[2].test(dateStr)) {
+            // Định dạng YYYY-MM-DD
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+                parsedDate = new Date(dateStr + 'T00:00:00');
+            }
+            // Định dạng DD/MM/YYYY hoặc D/M/YYYY
+            else if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateStr)) {
                 const parts = dateStr.split('/');
-                parsedDate = new Date(parts[2], parts[1] - 1, parts[0]);
-            } else {
+                const day = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+                const year = parseInt(parts[2], 10);
+                parsedDate = new Date(year, month, day);
+            }
+            // Định dạng MM/DD/YYYY
+            else if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateStr)) {
+                // Thử parse theo cách khác nếu format trên không work
+                parsedDate = new Date(dateStr);
+            }
+            else {
                 parsedDate = new Date(dateStr);
             }
             
             return isNaN(parsedDate.getTime()) ? null : parsedDate;
+        }
+
+        function clearDateFilter() {
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            document.getElementById('clearDateBtn').style.display = 'none';
+            
+            if (currentData.length > 0) {
+                filterAndDisplayData();
+            }
+            
+            showStatus('🗑️ Đã xóa bộ lọc ngày', 'info');
         }
 
         async function loadData() {
@@ -611,20 +632,43 @@
             
             let data = currentData;
             
+            // Hiển thị/ẩn nút xóa lọc ngày
+            const clearDateBtn = document.getElementById('clearDateBtn');
+            if (startDate || endDate) {
+                clearDateBtn.style.display = 'inline-block';
+            } else {
+                clearDateBtn.style.display = 'none';
+            }
+            
             // Áp dụng bộ lọc ngày
             if (startDate || endDate) {
-                const startDateObj = startDate ? new Date(startDate) : null;
-                const endDateObj = endDate ? new Date(endDate) : null;
+                const startDateObj = startDate ? new Date(startDate + 'T00:00:00') : null;
+                const endDateObj = endDate ? new Date(endDate + 'T23:59:59') : null;
+                
+                console.log('Filter dates:', { startDateObj, endDateObj });
                 
                 data = currentData.filter(record => {
                     const recordDate = parseDate(record.ngay_dong_goi);
+                    
+                    // Debug log
+                    if (record.ngay_dong_goi) {
+                        console.log(`Record date: ${record.ngay_dong_goi} -> Parsed: ${recordDate}`);
+                    }
+                    
                     if (!recordDate) return true; // Giữ lại các bản ghi không có ngày
                     
-                    if (startDateObj && recordDate < startDateObj) return false;
-                    if (endDateObj && recordDate > endDateObj) return false;
+                    // Đặt thời gian của recordDate về đầu ngày để so sánh chính xác
+                    const recordDateOnly = new Date(recordDate.getFullYear(), recordDate.getMonth(), recordDate.getDate());
+                    const startDateOnly = startDateObj ? new Date(startDateObj.getFullYear(), startDateObj.getMonth(), startDateObj.getDate()) : null;
+                    const endDateOnly = endDateObj ? new Date(endDateObj.getFullYear(), endDateObj.getMonth(), endDateObj.getDate()) : null;
+                    
+                    if (startDateOnly && recordDateOnly < startDateOnly) return false;
+                    if (endDateOnly && recordDateOnly > endDateOnly) return false;
                     
                     return true;
                 });
+                
+                console.log(`Filtered ${data.length} records from ${currentData.length}`);
             }
             
             filteredData = data;
@@ -634,7 +678,19 @@
                 performSearch(false); // false = không hiển thị thông báo
             } else {
                 displayData(filteredData);
-                showStatus(`📊 Hiển thị ${filteredData.length} bản ghi${startDate || endDate ? ' (đã lọc theo ngày)' : ''}`, 'info');
+                let statusMessage = `📊 Hiển thị ${filteredData.length} bản ghi`;
+                if (startDate || endDate) {
+                    statusMessage += ` (đã lọc theo ngày`;
+                    if (startDate && endDate) {
+                        statusMessage += ` từ ${startDate} đến ${endDate}`;
+                    } else if (startDate) {
+                        statusMessage += ` từ ${startDate}`;
+                    } else if (endDate) {
+                        statusMessage += ` đến ${endDate}`;
+                    }
+                    statusMessage += `)`;
+                }
+                showStatus(statusMessage, 'info');
             }
         }
 
