@@ -135,8 +135,8 @@
 
         .results {
             display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 20px;
+            grid-template-columns: 400px 1fr;
+            gap: 30px;
             margin-top: 30px;
         }
 
@@ -144,27 +144,20 @@
             .results {
                 grid-template-columns: 1fr;
             }
-            
-            .chart-container {
-                width: 100%;
-                max-width: 350px;
-                margin: 0 auto;
-            }
         }
 
         .chart-container {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 15px;
-            padding: 15px;
+            padding: 20px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.1);
             border: 1px solid rgba(255,255,255,0.2);
-            height: 250px;
-            width: 350px;
+            height: fit-content;
         }
 
         .chart-container canvas {
-            max-height: 180px !important;
+            max-height: 300px !important;
             width: 100% !important;
         }
 
@@ -179,8 +172,8 @@
 
         .chart-container h3, .table-container h3 {
             color: #4a5568;
-            margin-bottom: 10px;
-            font-size: 1rem;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
             text-align: center;
         }
 
@@ -696,9 +689,8 @@
                                     return value.toLocaleString();
                                 },
                                 font: {
-                                    size: 10
-                                },
-                                maxTicksLimit: 5
+                                    size: 11
+                                }
                             }
                         },
                         x: {
@@ -707,19 +699,16 @@
                             },
                             ticks: {
                                 font: {
-                                    size: 10
+                                    size: 11
                                 },
-                                maxRotation: 45,
-                                maxTicksLimit: 8
+                                maxRotation: 45
                             }
                         }
                     },
                     layout: {
                         padding: {
-                            top: 5,
-                            bottom: 5,
-                            left: 5,
-                            right: 5
+                            top: 10,
+                            bottom: 10
                         }
                     }
                 }
@@ -727,8 +716,8 @@
             
             // Set chart container height
             const chartContainer = document.querySelector('.chart-container');
-            chartContainer.style.height = '250px';
-            document.querySelector('.chart-container canvas').style.height = '180px';
+            chartContainer.style.height = '350px';
+            document.querySelector('.chart-container canvas').style.height = '280px';
         }
 
         function populateYearFilter() {
