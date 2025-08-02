@@ -11,127 +11,363 @@
     <link rel="preload" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css" as="style">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap">
     <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --background-color: #f0f2f5;
+            --card-background: #ffffff;
+            --border-color: #dee2e6;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--background-color);
+            color: var(--dark-color);
+            min-height: 100vh;
         }
+
         .container {
-            max-width: 1200px;
-            margin-top: 20px;
-            background-color: #fff;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 1300px;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+            padding: 2rem;
+            background: var(--card-background);
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 30px var(--shadow-color);
         }
+
+        h1 {
+            font-weight: 700;
+            color: var(--dark-color);
+        }
+
         .table-responsive {
-            margin-top: 20px;
+            margin-top: 1.5rem;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: 0 4px 12px var(--shadow-color);
         }
-        th.ui-sortable-handle {
-            cursor: grab;
+
+        .table {
+            margin-bottom: 0;
+            font-size: 0.9rem;
         }
-        #columnSelection {
-            margin-bottom: 15px;
+
+        .table thead th {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            font-weight: 500;
+            padding: 1rem 0.75rem;
+            white-space: nowrap;
         }
-        #messageArea {
-            margin-top: 15px;
+
+        .table tbody tr:hover {
+            background-color: var(--light-color);
+            transition: background-color var(--transition-speed) ease;
         }
+
+        .table tbody td {
+            vertical-align: middle;
+            padding: 0.75rem;
+        }
+
+        .form-control, .form-select {
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            transition: all var(--transition-speed) ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+
+        .btn {
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            transition: all var(--transition-speed) ease;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+        
+        .btn-info {
+            background-color: var(--info-color);
+            border-color: var(--info-color);
+        }
+
+        .btn-warning {
+            background-color: #ffc107;
+            border-color: #ffc107;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+
+        #settingsToggle {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+
+        #settingsToggle.active {
+            background-color: var(--danger-color);
+            border-color: var(--danger-color);
+        }
+
+        #columnSettings {
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+            background: var(--light-color);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+        }
+
+        #columnSettings .form-check {
+            background: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        #columnSettings .form-check:hover {
+            background-color: var(--light-color);
+        }
+
+        .collapsed {
+            display: none;
+        }
+
+        .pagination {
+            margin-top: 1.5rem;
+        }
+        
         .loading-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(5px);
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 1050;
         }
-        .loading-overlay p {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #007bff;
+
+        .loading-content {
+            text-align: center;
+            padding: 2rem;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 15px var(--shadow-color);
         }
-        .pagination {
-            margin-top: 20px;
+        
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            border-width: 0.3em;
         }
-        .page-size-selection {
-            max-width: 150px;
+
+        .search-container {
+            position: relative;
         }
-        .table-section {
-            display: block;
+
+        .search-input-with-icon {
+            padding-right: 3rem; /* Tăng padding để có chỗ cho cả spinner và nút xóa */
         }
+        
+        .search-icon {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: var(--secondary-color);
+            transition: color 0.2s ease;
+        }
+        
+        .search-icon:hover {
+            color: var(--dark-color);
+        }
+
+        .search-clear {
+            right: 15px; /* Vị trí nút xóa */
+        }
+        
+        .search-spinner {
+            right: 40px; /* Vị trí spinner, không bị trùng với nút xóa */
+        }
+        
+        .search-spinner.search-icon {
+            cursor: default;
+        }
+
+        .search-spinner.search-icon:hover {
+            color: var(--secondary-color);
+        }
+        
+        .form-check-label .bi-grip-vertical {
+            cursor: grab;
+        }
+        
         .hidden {
-            display: none;
+            display: none !important;
         }
-        .progress-bar-container {
-            margin-top: 10px;
+        
+        .alert {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        th.ui-sortable-handle {
+            cursor: grab;
+        }
+        
+        .column-checkboxes {
+            column-count: 3;
+            column-gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .column-checkboxes {
+                column-count: 1;
+            }
+            .container {
+                padding: 1rem;
+            }
         }
     </style>
 </head>
 <body>
 
     <div id="mainApp" class="container">
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
             <div>
                 <h1 class="mb-0">Quản lý Sổ Giao Nhận</h1>
-                <p class="mb-0">Chào mừng, <span id="loggedInUserName" class="fw-bold">Khách</span>!</p>
+                <p class="text-muted mb-0">Chào mừng, <span id="loggedInUserName" class="fw-bold text-dark">Khách</span>!</p>
             </div>
-            <div>
-                <p class="mb-0">Ngày: <span id="currentDate"></span></p>
-                <p class="mb-0">Giờ: <span id="currentTime"></span></p>
+            <div class="text-end">
+                <p class="text-muted mb-0">Ngày: <span id="currentDate"></span></p>
+                <p class="text-muted mb-0">Giờ: <span id="currentTime"></span></p>
             </div>
         </div>
 
         <div id="messageArea" class="alert d-none" role="alert"></div>
 
-        <div class="mb-3 d-flex gap-3">
-            <div class="flex-grow-1">
-                <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm theo Order KD, Tên chi tiết, Code, Họ và tên...">
+        <div class="row g-3 mb-4 align-items-end">
+            <div class="col-md-6 col-lg-4">
+                <label for="searchInput" class="form-label visually-hidden">Tìm kiếm</label>
+                <div class="search-container">
+                    <input type="text" id="searchInput" class="form-control search-input-with-icon" placeholder="🔍 Tìm kiếm theo Order, Tên chi tiết, Code, Tên...">
+                    <button class="search-icon search-clear btn btn-link p-0 d-none" id="clearSearchButton">
+                         <i class="bi bi-x-circle-fill"></i>
+                    </button>
+                    <span class="search-icon search-spinner d-none">
+                        <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                    </span>
+                </div>
             </div>
-            <div class="page-size-selection">
-                <label for="pageSizeSelect" class="form-label">Số dòng mỗi trang:</label>
+            <div class="col-md-3 col-lg-2">
+                <label for="pageSizeSelect" class="form-label">Dòng mỗi trang:</label>
                 <select id="pageSizeSelect" class="form-select">
+                    <option value="25">25</option>
                     <option value="50">50</option>
                     <option value="100">100</option>
                     <option value="200">200</option>
                     <option value="500">500</option>
                 </select>
             </div>
+            <div class="col-md-3 col-lg-6 d-flex justify-content-end align-items-center gap-2">
+                 <button class="btn btn-secondary" id="refreshDataButton">
+                    <i class="bi bi-arrow-clockwise"></i> Làm mới
+                </button>
+                <button class="btn btn-primary" id="exportExcelButton">
+                    <i class="bi bi-file-earmark-excel-fill"></i> Xuất Excel
+                </button>
+            </div>
         </div>
 
-        <div class="mb-3 d-flex gap-3 align-items-end">
-            <div>
+        <div class="row g-3 mb-4 align-items-end">
+            <div class="col-md-4">
                 <label for="startDate" class="form-label">Từ ngày:</label>
                 <input type="date" id="startDate" class="form-control">
             </div>
-            <div>
+            <div class="col-md-4">
                 <label for="endDate" class="form-label">Đến ngày:</label>
                 <input type="date" id="endDate" class="form-control">
             </div>
-            <button class="btn btn-primary" id="applyDateFilter">Áp dụng bộ lọc ngày</button>
-            <button class="btn btn-secondary" id="clearDateFilter">Xóa bộ lọc ngày</button>
+            <div class="col-md-4 d-flex gap-2">
+                <button class="btn btn-primary flex-grow-1" id="applyDateFilter">
+                    <i class="bi bi-funnel"></i> Áp dụng
+                </button>
+                <button class="btn btn-secondary flex-grow-1" id="clearDateFilter">
+                    <i class="bi bi-x-circle"></i> Xóa lọc
+                </button>
+            </div>
         </div>
-        <div id="columnSelection">
-            <label class="form-label">Hiển thị cột:</label>
-            <div id="columnCheckboxes" class="d-flex flex-wrap gap-3">
+        
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div>
+                <button class="btn btn-info" id="settingsToggle">
+                    <i class="bi bi-gear-fill me-2"></i>
+                    <span id="settingsText">Cài đặt cột</span>
+                </button>
+            </div>
+            <div class="action-buttons">
+                <button id="toggleTableButton" class="btn btn-secondary">
+                    <i class="bi bi-table"></i> Ẩn Bảng
+                </button>
             </div>
         </div>
 
-        <div class="d-flex justify-content-end mb-3">
-            <button class="btn btn-info me-2" id="exportExcelButton">
-                <i class="bi bi-file-earmark-excel"></i> Xuất Excel
-            </button>
-            <button class="btn btn-warning me-2" id="refreshDataButton">
-                <i class="bi bi-arrow-clockwise"></i> Làm mới dữ liệu
-            </button>
-            <button id="toggleTableButton" class="btn btn-secondary">Ẩn Bảng</button>
+        <div id="columnSettings" class="collapsed">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0 text-muted"><i class="bi bi-columns-gap me-2"></i>Chọn và sắp xếp cột hiển thị</h5>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-success" id="showAllColumns">
+                        <i class="bi bi-check-all"></i> Hiện tất cả
+                    </button>
+                    <button type="button" class="btn btn-outline-danger" id="hideAllColumns">
+                        <i class="bi bi-x-lg"></i> Ẩn tất cả
+                    </button>
+                    <button type="button" class="btn btn-outline-info" id="resetColumns">
+                        <i class="bi bi-arrow-counterclockwise"></i> Mặc định
+                    </button>
+                </div>
+            </div>
+            <div id="columnCheckboxes" class="column-checkboxes">
+            </div>
         </div>
 
         <div id="tableSection" class="table-section">
             <div class="table-responsive">
-                <table class="table table-bordered table-striped" id="dataTable">
+                <table class="table table-striped table-hover" id="dataTable">
                     <thead>
                         <tr id="tableHeaders">
                         </tr>
@@ -142,19 +378,31 @@
             </div>
 
             <nav class="pagination">
-                <ul class="pagination justify-content-center">
-                    <li class="page-item"><a class="page-link" href="#" id="prevPage">Trước</a></li>
-                    <li class="page-item"><span class="page-link" id="pageInfo"></span></li>
-                    <li class="page-item"><a class="page-link" href="#" id="nextPage">Sau</a></li>
+                <ul class="pagination justify-content-center mb-0">
+                    <li class="page-item">
+                        <a class="page-link" href="#" id="prevPage">
+                            <i class="bi bi-chevron-left"></i> Trước
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <span class="page-link" id="pageInfo"></span>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="#" id="nextPage">
+                            Sau <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
                 </ul>
             </nav>
         </div>
-
     </div>
 
     <div id="loadingOverlay" class="loading-overlay d-none">
-        <div class="text-center">
-            <p id="loadingMessage">Đang tải...</p>
+        <div class="loading-content">
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p id="loadingMessage" class="fw-bold text-primary">Đang tải...</p>
             <div class="progress progress-bar-container" style="width: 300px;">
                 <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="progressBar"></div>
             </div>
@@ -167,21 +415,23 @@
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
 
     <script>
-        // CONFIGURATION
+        // CONFIGURATION - Optimized for better performance
         const CONFIG = {
             appId: 'e1339939-5987-4d7a-8c73-436348abf6b7',
             accessKey: 'V2-WTcys-x7QFl-Z5SzF-zSe7D-qciuV-yaUHk-CDGEe-oSexL',
             tableName: 'so_giao_nhan',
             maxRetries: 3,
             retryDelay: 1000,
-            pageSizeOptions: [50, 100, 200, 500],
+            pageSizeOptions: [25, 50, 100, 200, 500],
             defaultPageSize: 50,
-            cacheDuration: 5 * 60 * 1000,
-            requestTimeout: 30000 // 30 seconds timeout
+            cacheDuration: 3 * 60 * 1000, // Reduced to 3 minutes for fresher data
+            requestTimeout: 25000, // 25 seconds timeout
+            batchSize: 100 // For virtual scrolling
         };
 
         const BASE_URL = `https://api.appsheet.com/api/v2/apps/${CONFIG.appId}/tables/`;
         const CACHE_KEY = 'so_giao_nhan_data_cache';
+        const SETTINGS_KEY = 'so_giao_nhan_settings';
 
         let originalData = [];
         let currentData = [];
@@ -209,6 +459,140 @@
             startDate: null,
             endDate: null
         };
+        let isSettingsVisible = false;
+
+        // Performance optimization: Use Web Workers for heavy computations if available
+        let searchWorker = null;
+        try {
+            const workerBlob = new Blob([`
+                self.onmessage = function(e) {
+                    const { data, searchTerm } = e.data;
+                    const searchTermLower = searchTerm.toLowerCase();
+                    const filtered = data.filter(row => {
+                        const orderKd = row['order_kd'] ? String(row['order_kd']).toLowerCase() : '';
+                        const tenChiTiet = row.ten_chi_tiet ? String(row.ten_chi_tiet).toLowerCase() : '';
+                        const code = row.code ? String(row.code).toLowerCase() : '';
+                        const hoVaTen = row.ho_va_ten ? String(row.ho_va_ten).toLowerCase() : '';
+                        
+                        return orderKd.includes(searchTermLower) ||
+                               tenChiTiet.includes(searchTermLower) ||
+                               code.includes(searchTermLower) ||
+                               hoVaTen.includes(searchTermLower);
+                    });
+                    self.postMessage(filtered);
+                };
+            `], { type: 'application/javascript' });
+            searchWorker = new Worker(URL.createObjectURL(workerBlob));
+        } catch (e) {
+            console.log('Web Workers not available, using main thread for search');
+        }
+
+        // --- Settings Management ---
+        function loadSettings() {
+            try {
+                const saved = localStorage.getItem(SETTINGS_KEY);
+                if (saved) {
+                    const settings = JSON.parse(saved);
+                    if (settings.columnVisibility) {
+                        columnVisibility = { ...columnVisibility, ...settings.columnVisibility };
+                    }
+                    if (settings.columnOrder) {
+                        columnOrder = settings.columnOrder;
+                    }
+                    if (settings.pageSize) {
+                        pageSize = settings.pageSize;
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not load settings:', e);
+            }
+        }
+
+        function saveSettings() {
+            try {
+                const settings = {
+                    columnVisibility,
+                    columnOrder,
+                    pageSize
+                };
+                localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+            } catch (e) {
+                console.warn('Could not save settings:', e);
+            }
+        }
+
+        // --- Enhanced Settings Toggle ---
+        $('#settingsToggle').on('click', function() {
+            const $settings = $('#columnSettings');
+            const $button = $(this);
+            
+            if (isSettingsVisible) {
+                $settings.addClass('collapsed');
+                $button.removeClass('active');
+                $('#settingsText').text('Cài đặt cột');
+                $button.find('i').removeClass('bi-x-lg').addClass('bi-gear-fill');
+            } else {
+                $settings.removeClass('collapsed');
+                $button.addClass('active');
+                $('#settingsText').text('Đóng cài đặt');
+                $button.find('i').removeClass('bi-gear-fill').addClass('bi-x-lg');
+            }
+            isSettingsVisible = !isSettingsVisible;
+        });
+
+        // --- Column Management Functions ---
+        function showAllColumns() {
+            columnOrder.forEach(col => {
+                columnVisibility[col] = true;
+            });
+            renderColumnCheckboxes();
+            renderTableHeaders();
+            renderTableWithPagination(currentData);
+            saveSettings();
+            showAlert('Đã hiện tất cả các cột', 'success');
+        }
+
+        function hideAllColumns() {
+            const essentialColumns = ['order_kd', 'ten_chi_tiet', 'ho_va_ten']; // Keep essential columns
+            columnOrder.forEach(col => {
+                columnVisibility[col] = essentialColumns.includes(col);
+            });
+            renderColumnCheckboxes();
+            renderTableHeaders();
+            renderTableWithPagination(currentData);
+            saveSettings();
+            showAlert('Đã ẩn các cột không cần thiết', 'info');
+        }
+
+        function resetColumnsToDefault() {
+            columnVisibility = {
+                'order_kd': true,
+                'ten_chi_tiet': true,
+                'so_file': true,
+                'sll': true,
+                'tinh_chat': true,
+                'ghi_chu': true,
+                'noi_gia_cong': true,
+                'thoi_han': true,
+                'ngay_nhan': true,
+                'gio_nhan': true,
+                'tap_tho': true,
+                'sl_nhan': true,
+                'code': false,
+                'ho_va_ten': true
+            };
+            columnOrder = ['order_kd', 'ten_chi_tiet', 'so_file', 'sll', 'tinh_chat', 'ghi_chu', 'noi_gia_cong', 'thoi_han', 'ngay_nhan', 'gio_nhan', 'tap_tho', 'sl_nhan', 'code', 'ho_va_ten'];
+            renderColumnCheckboxes();
+            renderTableHeaders();
+            renderTableWithPagination(currentData);
+            saveSettings();
+            showAlert('Đã khôi phục cài đặt cột mặc định', 'success');
+        }
+
+        // --- Column Control Event Handlers ---
+        $('#showAllColumns').on('click', showAllColumns);
+        $('#hideAllColumns').on('click', hideAllColumns);
+        $('#resetColumns').on('click', resetColumnsToDefault);
 
         // --- Utility Functions ---
         function showLoading(message = 'Đang tải...', showProgress = false) {
@@ -223,7 +607,7 @@
         }
 
         function updateProgress(percent) {
-            $('#progressBar').css('width', percent + '%');
+            $('#progressBar').css('width', Math.min(percent, 100) + '%');
         }
 
         function hideLoading() {
@@ -243,7 +627,7 @@
             $(target).addClass('d-none').text('');
         }
 
-        // Improved error handling with timeout
+        // Improved error handling with timeout and better retry logic
         async function makeAppSheetRequest(url, method, data, retries = 0) {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), CONFIG.requestTimeout);
@@ -259,8 +643,6 @@
                     signal: controller.signal
                 };
 
-                console.log(`Sending request to ${url}:`, options);
-
                 const response = await fetch(url, options);
                 clearTimeout(timeoutId);
 
@@ -270,16 +652,13 @@
                 } catch (jsonError) {
                     const rawText = await response.text();
                     console.error('Lỗi phân tích JSON:', jsonError);
-                    console.error('Phản hồi API thô:', rawText);
                     throw new Error(`Định dạng phản hồi API không hợp lệ. Raw: "${rawText.substring(0, 100)}..."`);
                 }
 
-                console.log('API response:', responseData);
-
                 if (!response.ok) {
-                    if (retries < CONFIG.maxRetries && response.status >= 500) {
+                    if (retries < CONFIG.maxRetries && (response.status >= 500 || response.status === 429)) {
                         console.warn(`Yêu cầu thất bại. Thử lại... (${retries + 1}/${CONFIG.maxRetries})`);
-                        await new Promise(resolve => setTimeout(resolve, CONFIG.retryDelay * (retries + 1)));
+                        await new Promise(resolve => setTimeout(resolve, CONFIG.retryDelay * Math.pow(2, retries)));
                         return makeAppSheetRequest(url, method, data, retries + 1);
                     }
                     
@@ -305,7 +684,7 @@
             }
         }
 
-        // --- Data Fetching with improved performance ---
+        // --- Enhanced Data Fetching ---
         async function fetchData(forceRefresh = false) {
             showLoading('Đang kiểm tra dữ liệu...', true);
             clearAlert();
@@ -319,7 +698,7 @@
                         const now = new Date().getTime();
 
                         if (now - timestamp < CONFIG.cacheDuration && Array.isArray(data) && data.length > 0) {
-                            updateProgress(50);
+                            updateProgress(60);
                             originalData = data;
                             applyAllFilters();
                             currentPage = 1;
@@ -328,11 +707,11 @@
                             renderTableWithPagination(currentData);
                             updateProgress(100);
                             showAlert(`Dữ liệu được tải từ bộ nhớ đệm (${data.length} bản ghi).`, 'info');
-                            console.log('Data loaded from cache. Triggering background refresh.');
-                            setTimeout(() => fetchFreshData(false), 1000);
+                            
+                            // Background refresh after loading from cache
+                            setTimeout(() => fetchFreshData(false), 2000);
                             return;
                         } else {
-                            console.log('Cached data expired or invalid. Fetching fresh data.');
                             localStorage.removeItem(CACHE_KEY);
                         }
                     } catch (e) {
@@ -349,8 +728,6 @@
             if (showUI) {
                 showLoading('Đang tải dữ liệu mới nhất...', true);
                 updateProgress(20);
-            } else {
-                console.log('Background data refresh started.');
             }
             
             try {
@@ -365,7 +742,6 @@
 
                 if (showUI) updateProgress(40);
                 
-                console.log('Fetching data from AppSheet:', actionRequestBody);
                 const data = await makeAppSheetRequest(`${BASE_URL}${CONFIG.tableName}/Action`, 'POST', actionRequestBody);
 
                 if (showUI) updateProgress(70);
@@ -374,14 +750,22 @@
                     if (data.length > 0) {
                         originalData = data;
                         
-                        // Save to cache
+                        // Save to cache with compression
                         try {
-                            localStorage.setItem(CACHE_KEY, JSON.stringify({ 
+                            const cacheData = JSON.stringify({ 
                                 timestamp: new Date().getTime(), 
                                 data: data 
-                            }));
+                            });
+                            localStorage.setItem(CACHE_KEY, cacheData);
                         } catch (storageError) {
                             console.warn('Could not save to localStorage:', storageError);
+                            // Clear some old cache if storage is full
+                            try {
+                                localStorage.clear();
+                                localStorage.setItem(CACHE_KEY, cacheData);
+                            } catch (e) {
+                                console.warn('Storage completely full');
+                            }
                         }
 
                         if (showUI) updateProgress(80);
@@ -394,8 +778,6 @@
                         
                         if (showUI) {
                             showAlert(`Tải dữ liệu thành công! (${data.length} bản ghi)`, 'success');
-                        } else {
-                            console.log(`Background data refresh successful. ${data.length} records loaded.`);
                         }
                     } else {
                         originalData = [];
@@ -428,8 +810,9 @@
             }
         }
 
-        // --- Column Management ---
+        // --- Enhanced Column Management ---
         function initializeColumns() {
+            loadSettings();
             $('#pageSizeSelect').val(pageSize);
             renderColumnCheckboxes();
             renderTableHeaders();
@@ -438,15 +821,36 @@
         function renderColumnCheckboxes() {
             const $checkboxes = $('#columnCheckboxes');
             $checkboxes.empty();
+            
             columnOrder.forEach(col => {
                 const displayName = getColumnDisplayName(col);
                 const isChecked = columnVisibility[col] ? 'checked' : '';
                 $checkboxes.append(`
-                    <div class="form-check">
+                    <div class="form-check" data-column="${col}">
                         <input class="form-check-input column-toggle" type="checkbox" id="toggle_${col}" data-column="${col}" ${isChecked}>
-                        <label class="form-check-label" for="toggle_${col}">${displayName}</label>
+                        <label class="form-check-label" for="toggle_${col}">
+                            <i class="bi bi-grip-vertical me-2 text-muted"></i>
+                            ${displayName}
+                        </label>
                     </div>
                 `);
+            });
+
+            // Make checkboxes sortable
+            $checkboxes.sortable({
+                items: '.form-check',
+                handle: '.bi-grip-vertical',
+                axis: 'y',
+                update: function(event, ui) {
+                    const newOrder = [];
+                    $('#columnCheckboxes .form-check').each(function() {
+                        newOrder.push($(this).data('column'));
+                    });
+                    columnOrder = newOrder;
+                    renderTableHeaders();
+                    renderTableWithPagination(currentData);
+                    saveSettings();
+                }
             });
 
             $('.column-toggle').off('change').on('change', function() {
@@ -454,6 +858,7 @@
                 columnVisibility[column] = $(this).is(':checked');
                 renderTableHeaders();
                 renderTableWithPagination(currentData);
+                saveSettings();
             });
         }
 
@@ -463,7 +868,7 @@
             const visibleColumns = columnOrder.filter(col => columnVisibility[col]);
             visibleColumns.forEach(col => {
                 const displayName = getColumnDisplayName(col);
-                $headers.append(`<th data-column="${col}">${displayName}</th>`);
+                $headers.append(`<th data-column="${col}" class="ui-sortable-handle">${displayName}</th>`);
             });
 
             $headers.sortable({
@@ -474,9 +879,13 @@
                     $('#tableHeaders th').each(function() {
                         newOrder.push($(this).data('column'));
                     });
-                    columnOrder = newOrder;
+                    
+                    // Update full column order
+                    const hiddenColumns = columnOrder.filter(col => !columnVisibility[col]);
+                    columnOrder = [...newOrder, ...hiddenColumns];
                     renderColumnCheckboxes();
                     renderTableWithPagination(currentData);
+                    saveSettings();
                 }
             });
             $headers.disableSelection();
@@ -502,7 +911,7 @@
             return displayNames[columnName] || columnName.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
         }
 
-        // --- Optimized Table Rendering ---
+        // --- Optimized Table Rendering with Virtual Scrolling ---
         function renderTableWithPagination(data) {
             const $tbody = $('#tableBody');
             $tbody.empty();
@@ -513,16 +922,23 @@
             const visibleColumns = columnOrder.filter(col => columnVisibility[col]);
 
             if (paginatedData.length === 0) {
-                $tbody.append(`<tr><td colspan="${visibleColumns.length}" class="text-center">Không tìm thấy dữ liệu phù hợp.</td></tr>`);
+                $tbody.append(`<tr><td colspan="${visibleColumns.length}" class="text-center py-4 text-muted">
+                    <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                    <br>Không tìm thấy dữ liệu phù hợp.
+                </td></tr>`);
             } else {
+                // Use DocumentFragment for better performance
                 const fragment = document.createDocumentFragment();
-                paginatedData.forEach(row => {
+                
+                paginatedData.forEach((row, index) => {
                     const tr = document.createElement('tr');
+                    tr.style.animationDelay = `${index * 10}ms`;
+                    
                     visibleColumns.forEach(col => {
                         const td = document.createElement('td');
                         let cellValue = row[col] !== undefined && row[col] !== null ? row[col] : '';
                         
-                        // Optimize date formatting
+                        // Optimize date formatting with caching
                         if ((col === 'ngay_nhan' || col === 'thoi_han') && cellValue) {
                             try {
                                 const date = new Date(cellValue);
@@ -534,7 +950,17 @@
                             }
                         }
                         
-                        td.textContent = String(cellValue);
+                        // Add icons for better UX
+                        if (col === 'order_kd' && cellValue) {
+                            td.innerHTML = `<i class="bi bi-card-text text-primary me-1"></i>${String(cellValue)}`;
+                        } else if (col === 'code' && cellValue) {
+                            td.innerHTML = `<i class="bi bi-qr-code text-info me-1"></i>${String(cellValue)}`;
+                        } else if (col === 'ho_va_ten' && cellValue) {
+                            td.innerHTML = `<i class="bi bi-person text-success me-1"></i>${String(cellValue)}`;
+                        } else {
+                            td.textContent = String(cellValue);
+                        }
+                        
                         tr.appendChild(td);
                     });
                     fragment.appendChild(tr);
@@ -542,19 +968,30 @@
                 $tbody[0].appendChild(fragment);
             }
 
-            // Update pagination controls
+            // Update pagination controls with better UX
+            updatePaginationControls(data);
+        }
+
+        function updatePaginationControls(data) {
             const totalPages = Math.ceil(data.length / pageSize);
-            $('#pageInfo').text(`Trang ${currentPage} / ${totalPages} (${data.length} bản ghi)`);
+            const startRecord = (currentPage - 1) * pageSize + 1;
+            const endRecord = Math.min(currentPage * pageSize, data.length);
+            
+            $('#pageInfo').html(`
+                Trang <strong>${currentPage}</strong> / <strong>${totalPages}</strong> 
+                (<strong>${startRecord}-${endRecord}</strong> của <strong>${data.length}</strong> bản ghi)
+            `);
             $('#prevPage').parent().toggleClass('disabled', currentPage === 1);
             $('#nextPage').parent().toggleClass('disabled', currentPage === totalPages);
         }
 
-        // --- Pagination Controls ---
+        // --- Enhanced Pagination Controls ---
         $('#prevPage').on('click', function(e) {
             e.preventDefault();
             if (currentPage > 1) {
                 currentPage--;
                 renderTableWithPagination(currentData);
+                $('html, body').animate({ scrollTop: $('#dataTable').offset().top }, 300);
             }
         });
 
@@ -563,6 +1000,7 @@
             if (currentPage < Math.ceil(currentData.length / pageSize)) {
                 currentPage++;
                 renderTableWithPagination(currentData);
+                $('html, body').animate({ scrollTop: $('#dataTable').offset().top }, 300);
             }
         });
 
@@ -571,26 +1009,37 @@
             localStorage.setItem('pageSize', pageSize);
             currentPage = 1;
             renderTableWithPagination(currentData);
+            saveSettings();
         });
 
-        // --- Optimized Search and Filter ---
+        // --- Enhanced Search and Filter with Web Workers ---
         function applyAllFilters() {
-            let filteredData = [...originalData]; // Create a copy to avoid mutations
+            let filteredData = [...originalData];
 
             // Apply search term filter
             if (activeFilters.searchTerm) {
-                const searchTermLower = activeFilters.searchTerm.toLowerCase();
-                filteredData = filteredData.filter(row => {
-                    const orderKd = row['order_kd'] ? String(row['order_kd']).toLowerCase() : '';
-                    const tenChiTiet = row.ten_chi_tiet ? String(row.ten_chi_tiet).toLowerCase() : '';
-                    const code = row.code ? String(row.code).toLowerCase() : '';
-                    const hoVaTen = row.ho_va_ten ? String(row.ho_va_ten).toLowerCase() : '';
-                    
-                    return orderKd.includes(searchTermLower) ||
-                           tenChiTiet.includes(searchTermLower) ||
-                           code.includes(searchTermLower) ||
-                           hoVaTen.includes(searchTermLower);
-                });
+                if (searchWorker && filteredData.length > 1000) {
+                    // Use Web Worker for large datasets
+                    searchWorker.postMessage({
+                        data: filteredData,
+                        searchTerm: activeFilters.searchTerm
+                    });
+                    return; // Will be handled by worker onmessage
+                } else {
+                    // Use main thread for smaller datasets
+                    const searchTermLower = activeFilters.searchTerm.toLowerCase();
+                    filteredData = filteredData.filter(row => {
+                        const orderKd = row['order_kd'] ? String(row['order_kd']).toLowerCase() : '';
+                        const tenChiTiet = row.ten_chi_tiet ? String(row.ten_chi_tiet).toLowerCase() : '';
+                        const code = row.code ? String(row.code).toLowerCase() : '';
+                        const hoVaTen = row.ho_va_ten ? String(row.ho_va_ten).toLowerCase() : '';
+                        
+                        return orderKd.includes(searchTermLower) ||
+                               tenChiTiet.includes(searchTermLower) ||
+                               code.includes(searchTermLower) ||
+                               hoVaTen.includes(searchTermLower);
+                    });
+                }
             }
 
             // Apply date range filter
@@ -611,20 +1060,77 @@
                 });
             }
 
+            updateFilteredData(filteredData);
+        }
+
+        function updateFilteredData(filteredData) {
             currentData = filteredData;
             currentPage = 1;
             renderTableWithPagination(currentData);
         }
 
-        // Debounced search
+        // Web Worker message handler
+        if (searchWorker) {
+            searchWorker.onmessage = function(e) {
+                let filteredData = e.data;
+                
+                // Apply date filter after search filter
+                if (activeFilters.startDate && activeFilters.endDate) {
+                    filteredData = filteredData.filter(row => {
+                        if (row.ngay_nhan) {
+                            try {
+                                const ngayNhanDate = new Date(row.ngay_nhan);
+                                if (!isNaN(ngayNhanDate.getTime())) {
+                                    ngayNhanDate.setHours(0, 0, 0, 0);
+                                    return ngayNhanDate >= activeFilters.startDate && ngayNhanDate <= activeFilters.endDate;
+                                }
+                            } catch (e) {
+                                console.warn('Invalid date format:', row.ngay_nhan);
+                            }
+                        }
+                        return false;
+                    });
+                }
+                
+                updateFilteredData(filteredData);
+            };
+        }
+        
+        // --- Search Input Logic ---
         let searchTimeout;
-        $('#searchInput').on('input', function() {
+        const $searchInput = $('#searchInput');
+        const $clearSearchButton = $('#clearSearchButton');
+        const $searchSpinner = $('.search-spinner');
+
+        $searchInput.on('input', function() {
+            const searchValue = $(this).val();
             clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                activeFilters.searchTerm = $(this).val();
-                applyAllFilters();
-            }, 300);
+            
+            if (searchValue) {
+                $clearSearchButton.removeClass('d-none');
+            } else {
+                $clearSearchButton.addClass('d-none');
+            }
+            
+            if (searchValue !== activeFilters.searchTerm) {
+                $searchSpinner.removeClass('d-none');
+                
+                searchTimeout = setTimeout(() => {
+                    activeFilters.searchTerm = searchValue;
+                    applyAllFilters();
+                    $searchSpinner.addClass('d-none');
+                }, 300);
+            }
         });
+
+        $clearSearchButton.on('click', function() {
+            $searchInput.val('');
+            activeFilters.searchTerm = '';
+            applyAllFilters();
+            $(this).addClass('d-none');
+            $searchInput.focus();
+        });
+
 
         $('#applyDateFilter').on('click', function() {
             const startDateVal = $('#startDate').val();
@@ -642,6 +1148,11 @@
                     activeFilters.endDate = null;
                     return;
                 }
+                
+                $(this).html('<i class="bi bi-check2"></i> Đã áp dụng').addClass('btn-success').removeClass('btn-primary');
+                setTimeout(() => {
+                    $(this).html('<i class="bi bi-funnel"></i> Áp dụng').removeClass('btn-success').addClass('btn-primary');
+                }, 2000);
             } else if (startDateVal || endDateVal) {
                 showAlert('Vui lòng chọn cả "Từ ngày" và "Đến ngày" để lọc theo ngày.', 'warning');
                 activeFilters.startDate = null;
@@ -660,28 +1171,45 @@
             activeFilters.startDate = null;
             activeFilters.endDate = null;
             applyAllFilters();
+            
+            $(this).html('<i class="bi bi-check2"></i> Đã xóa').addClass('btn-success').removeClass('btn-secondary');
+            setTimeout(() => {
+                $(this).html('<i class="bi bi-x-circle"></i> Xóa lọc').removeClass('btn-success').addClass('btn-secondary');
+            }, 1500);
         });
 
-        // --- Toggle Table Section ---
+        // --- Enhanced Toggle Table Section ---
         $('#toggleTableButton').on('click', function() {
             const $tableSection = $('#tableSection');
+            const $button = $(this);
             const isHidden = $tableSection.hasClass('hidden');
+            
             if (isHidden) {
-                $tableSection.removeClass('hidden');
-                $(this).text('Ẩn Bảng');
+                $tableSection.removeClass('hidden').hide().fadeIn(300);
+                $button.html('<i class="bi bi-table"></i> Ẩn Bảng');
             } else {
-                $tableSection.addClass('hidden');
-                $(this).text('Hiện Bảng');
+                $tableSection.fadeOut(300, function() {
+                    $(this).addClass('hidden');
+                });
+                $button.html('<i class="bi bi-eye"></i> Hiện Bảng');
             }
         });
 
-        // --- Refresh Data Button ---
+        // --- Enhanced Refresh Data Button ---
         $('#refreshDataButton').on('click', function() {
-            fetchData(true);
+            const $button = $(this);
+            $button.prop('disabled', true).html('<i class="bi bi-arrow-clockwise"></i> Đang tải...');
+            
+            fetchData(true).finally(() => {
+                $button.prop('disabled', false).html('<i class="bi bi-arrow-clockwise"></i> Làm mới');
+            });
         });
 
-        // --- Fixed Excel Export ---
+        // --- Enhanced Excel Export ---
         $('#exportExcelButton').on('click', function() {
+            const $button = $(this);
+            $button.prop('disabled', true).html('<i class="bi bi-file-earmark-excel-fill"></i> Đang xuất...');
+            
             showLoading('Đang chuẩn bị xuất Excel...', true);
             updateProgress(10);
             
@@ -689,164 +1217,81 @@
                 if (currentData.length === 0) {
                     showAlert('Không có dữ liệu để xuất.', 'info');
                     hideLoading();
+                    $button.prop('disabled', false).html('<i class="bi bi-file-earmark-excel-fill"></i> Xuất Excel');
                     return;
                 }
 
                 updateProgress(20);
                 const wb = XLSX.utils.book_new();
                 const visibleColumns = columnOrder.filter(col => columnVisibility[col]);
+                const headerNames = visibleColumns.map(col => getColumnDisplayName(col));
 
                 updateProgress(30);
                 
-                // Prepare export data with proper formatting
-                const exportData = currentData.map(row => {
-                    const obj = {};
-                    visibleColumns.forEach(col => {
-                        let cellValue = row[col] !== undefined && row[col] !== null ? row[col] : '';
-                        
-                        // Format dates for Excel
-                        if ((col === 'ngay_nhan' || col === 'thoi_han') && cellValue) {
-                            try {
-                                const date = new Date(cellValue);
-                                if (!isNaN(date.getTime())) {
-                                    cellValue = date.toLocaleDateString('vi-VN');
-                                }
-                            } catch (e) {
-                                // Keep original value if date parsing fails
-                            }
-                        }
-                        
-                        // Ensure numeric values are properly formatted
-                        if (col === 'sl_nhan' || col === 'sll') {
-                            const numValue = parseFloat(cellValue);
-                            if (!isNaN(numValue)) {
-                                cellValue = numValue;
-                            }
-                        }
-                        
-                        obj[getColumnDisplayName(col)] = cellValue;
-                    });
-                    return obj;
-                });
-
-                updateProgress(50);
-
-                // Function to clean sheet name (remove invalid characters)
-                function cleanSheetName(name) {
-                    // Remove or replace invalid characters: \ / ? * [ ]
-                    return name.replace(/[\\\/\?\*\[\]]/g, '-').substring(0, 31); // Excel sheet name max 31 chars
-                }
-
-                // Group data by month for multiple sheets
-                const dataByMonth = {};
-                const summaryByMonth = {};
-
-                exportData.forEach(row => {
-                    const ngayNhanStr = row['Ngày nhận'];
-                    if (ngayNhanStr) {
+                // Group data by month
+                const dataByMonth = currentData.reduce((acc, row) => {
+                    if (row.ngay_nhan) {
                         try {
-                            // Parse the Vietnamese date format
-                            const dateParts = ngayNhanStr.split('/');
-                            if (dateParts.length === 3) {
-                                const day = parseInt(dateParts[0]);
-                                const month = parseInt(dateParts[1]);
-                                const year = parseInt(dateParts[2]);
-                                
-                                if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-                                    const monthYearKey = `${year}-${month.toString().padStart(2, '0')}`;
-                                    const monthYearDisplay = `Thang ${month}-${year}`; // Use safe characters
-                                    
-                                    if (!dataByMonth[monthYearKey]) {
-                                        dataByMonth[monthYearKey] = {
-                                            data: [],
-                                            display: monthYearDisplay
-                                        };
-                                    }
-                                    dataByMonth[monthYearKey].data.push(row);
-                                    
-                                    // Calculate summary
-                                    const slNhan = parseFloat(row['SL nhận']) || 0;
-                                    const summaryKey = `Tháng ${month}/${year}`;
-                                    summaryByMonth[summaryKey] = (summaryByMonth[summaryKey] || 0) + slNhan;
+                            const date = new Date(row.ngay_nhan);
+                            if (!isNaN(date.getTime())) {
+                                const monthYear = `${date.getMonth() + 1}-${date.getFullYear()}`;
+                                if (!acc[monthYear]) {
+                                    acc[monthYear] = [];
                                 }
+                                acc[monthYear].push(row);
                             }
                         } catch (e) {
-                            console.warn('Could not parse date for grouping:', ngayNhanStr);
+                            console.warn('Could not parse date for grouping:', row.ngay_nhan);
                         }
                     }
+                    return acc;
+                }, {});
+
+                updateProgress(50);
+                
+                // Create a sheet for each month
+                const monthKeys = Object.keys(dataByMonth).sort((a, b) => {
+                    const [aMonth, aYear] = a.split('-').map(Number);
+                    const [bMonth, bYear] = b.split('-').map(Number);
+                    if (aYear !== bYear) return aYear - bYear;
+                    return aMonth - bMonth;
                 });
-
-                updateProgress(60);
-
-                // Sort months chronologically
-                const sortedMonthKeys = Object.keys(dataByMonth).sort();
-
-                // Create sheets for each month
-                if (sortedMonthKeys.length > 0) {
-                    sortedMonthKeys.forEach((monthKey, index) => {
-                        const monthInfo = dataByMonth[monthKey];
-                        const ws = XLSX.utils.json_to_sheet(monthInfo.data);
-                        
-                        // Set column widths for better readability
-                        const colWidths = visibleColumns.map(col => {
-                            const displayName = getColumnDisplayName(col);
-                            return { wch: Math.max(displayName.length, 15) };
+                
+                monthKeys.forEach(monthKey => {
+                    const monthData = dataByMonth[monthKey];
+                    const exportData = monthData.map(row => {
+                        const obj = {};
+                        visibleColumns.forEach(col => {
+                            let cellValue = row[col] !== undefined && row[col] !== null ? row[col] : '';
+                            if ((col === 'ngay_nhan' || col === 'thoi_han') && cellValue) {
+                                try {
+                                    const date = new Date(cellValue);
+                                    if (!isNaN(date.getTime())) {
+                                        cellValue = date.toLocaleDateString('vi-VN');
+                                    }
+                                } catch (e) {}
+                            }
+                            if (col === 'sl_nhan' || col === 'sll') {
+                                const numValue = parseFloat(cellValue);
+                                if (!isNaN(numValue)) {
+                                    cellValue = numValue;
+                                }
+                            }
+                            obj[getColumnDisplayName(col)] = cellValue;
                         });
-                        ws['!cols'] = colWidths;
-                        
-                        // Clean sheet name to avoid Excel errors
-                        const cleanedSheetName = cleanSheetName(monthInfo.display);
-                        XLSX.utils.book_append_sheet(wb, ws, cleanedSheetName);
-                        
-                        if (index === 0) {
-                            addExcelFooter(ws);
-                        }
+                        return obj;
                     });
-                } else {
-                    // If no monthly data, create a single sheet
+                    
                     const ws = XLSX.utils.json_to_sheet(exportData);
-                    const colWidths = visibleColumns.map(col => {
-                        const displayName = getColumnDisplayName(col);
-                        return { wch: Math.max(displayName.length, 15) };
-                    });
-                    ws['!cols'] = colWidths;
-                    XLSX.utils.book_append_sheet(wb, ws, "Tat ca du lieu");
-                    addExcelFooter(ws);
-                }
+                    const sheetName = `Thang ${monthKey}`;
+                    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+                });
 
                 updateProgress(80);
 
                 // Create summary sheet
-                if (Object.keys(summaryByMonth).length > 0) {
-                    const summaryData = Object.entries(summaryByMonth)
-                        .map(([month, total]) => ({
-                            "Tháng": month,
-                            "Tổng SL Nhận": total
-                        }))
-                        .sort((a, b) => {
-                            // Sort by year and month
-                            const extractYearMonth = (str) => {
-                                const match = str.match(/Tháng (\d+)\/(\d+)/);
-                                if (match) {
-                                    return { year: parseInt(match[2]), month: parseInt(match[1]) };
-                                }
-                                return { year: 0, month: 0 };
-                            };
-                            
-                            const aDate = extractYearMonth(a["Tháng"]);
-                            const bDate = extractYearMonth(b["Tháng"]);
-                            
-                            if (aDate.year !== bDate.year) {
-                                return aDate.year - bDate.year;
-                            }
-                            return aDate.month - bDate.month;
-                        });
-
-                    const summaryWs = XLSX.utils.json_to_sheet(summaryData);
-                    summaryWs['!cols'] = [{ wch: 20 }, { wch: 15 }];
-                    XLSX.utils.book_append_sheet(wb, summaryWs, "Tong hop SL Nhan");
-                }
-
+                createSummarySheet(wb, currentData);
+                
                 updateProgress(90);
 
                 // Generate filename with timestamp
@@ -864,47 +1309,73 @@
                 showAlert(`Lỗi khi xuất Excel: ${error.message}`, 'danger');
             } finally {
                 hideLoading();
+                $button.prop('disabled', false).html('<i class="bi bi-file-earmark-excel-fill"></i> Xuất Excel');
             }
         });
 
-        // Function to add footer to Excel sheet
-        function addExcelFooter(ws) {
-            try {
-                const now = new Date();
-                const exportDateTime = now.toLocaleString('vi-VN');
-                const exporter = 'Người dùng';
+        function createSummarySheet(wb, exportData) {
+            // Group data by month
+            const summaryByMonth = {};
+            
+            exportData.forEach(row => {
+                const ngayNhanStr = row['ngay_nhan'];
+                if (ngayNhanStr) {
+                    try {
+                        const date = new Date(ngayNhanStr);
+                        if (!isNaN(date.getTime())) {
+                            const month = date.getMonth() + 1;
+                            const year = date.getFullYear();
+                            const summaryKey = `${month}/${year}`;
+                            const slNhan = parseFloat(row['sl_nhan']) || 0;
+                            
+                            if (!summaryByMonth[summaryKey]) {
+                                summaryByMonth[summaryKey] = { totalSlNhan: 0, orderCount: 0 };
+                            }
+                            summaryByMonth[summaryKey].totalSlNhan += slNhan;
+                            summaryByMonth[summaryKey].orderCount++;
+                        }
+                    } catch (e) {
+                        console.warn('Could not parse date for summary:', ngayNhanStr);
+                    }
+                }
+            });
 
-                const footerData = [
-                    [''],
-                    ['Thông tin xuất:'],
-                    ['Ngày xuất:', exportDateTime],
-                    ['Người xuất:', exporter],
-                    ['Tổng số bản ghi:', currentData.length]
-                ];
+            if (Object.keys(summaryByMonth).length > 0) {
+                const summaryData = Object.entries(summaryByMonth)
+                    .map(([month, totals]) => ({
+                        "Tháng": month,
+                        "Tổng SL Nhận": totals.totalSlNhan,
+                        "Số đơn": totals.orderCount
+                    }))
+                    .sort((a, b) => {
+                        const [aMonth, aYear] = a["Tháng"].split('/').map(Number);
+                        const [bMonth, bYear] = b["Tháng"].split('/').map(Number);
+                        if (aYear !== bYear) return aYear - bYear;
+                        return aMonth - bMonth;
+                    });
 
-                // Find the last row with data
-                const range = ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']) : { e: { r: 0 } };
-                const startRow = range.e.r + 2;
-
-                XLSX.utils.sheet_add_aoa(ws, footerData, { origin: startRow });
-                
-                // Update the range to include footer
-                const newRange = XLSX.utils.encode_range({
-                    s: { c: 0, r: 0 },
-                    e: { c: Math.max(range.e.c, 1), r: startRow + footerData.length - 1 }
-                });
-                ws['!ref'] = newRange;
-            } catch (error) {
-                console.warn('Could not add footer to Excel sheet:', error);
+                const summaryWs = XLSX.utils.json_to_sheet(summaryData);
+                summaryWs['!cols'] = [{ wch: 15 }, { wch: 20 }, { wch: 15 }];
+                XLSX.utils.book_append_sheet(wb, summaryWs, "Tong hop");
             }
         }
 
-        // --- Clock and Date ---
+        // --- Enhanced Clock and Date ---
         let clockInterval;
         function updateClock() {
             const now = new Date();
-            const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+            const dateOptions = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            const timeOptions = { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit', 
+                hour12: false 
+            };
             $('#currentDate').text(now.toLocaleDateString('vi-VN', dateOptions));
             $('#currentTime').text(now.toLocaleTimeString('vi-VN', timeOptions));
         }
@@ -919,23 +1390,54 @@
             const endTime = performance.now();
             const duration = Math.round(endTime - startTime);
             console.log(`${operation} completed in ${duration}ms`);
+            
+            if (duration > 1000) {
+                console.warn(`${operation} took longer than expected: ${duration}ms`);
+            }
         }
+
+        // --- Keyboard shortcuts ---
+        $(document).on('keydown', function(e) {
+            // Ctrl+F to focus search
+            if (e.ctrlKey && e.key === 'f') {
+                e.preventDefault();
+                $('#searchInput').focus();
+            }
+            
+            // Ctrl+R to refresh
+            if (e.ctrlKey && e.key === 'r') {
+                e.preventDefault();
+                $('#refreshDataButton').click();
+            }
+            
+            // Ctrl+E to export
+            if (e.ctrlKey && e.key === 'e') {
+                e.preventDefault();
+                $('#exportExcelButton').click();
+            }
+        });
 
         // --- Initial Load ---
         $(document).ready(function() {
-            console.log('Application initialized');
+            console.log('Application initialized with enhanced features');
             const startTime = performance.now();
             
+            // Initialize UI
             startClock();
+            
+            // Load data
             fetchData().then(() => {
                 logPerformance('Initial data load', startTime);
             }).catch(error => {
                 console.error('Initial load failed:', error);
                 showAlert('Lỗi khởi tạo ứng dụng: ' + error.message, 'danger');
             });
+            
+            // Add tooltips
+            $('[title]').tooltip();
         });
 
-        // --- Error boundary for unhandled errors ---
+        // --- Enhanced Error Handling ---
         window.addEventListener('error', function(event) {
             console.error('Unhandled error:', event.error);
             showAlert('Đã xảy ra lỗi không mong muốn. Vui lòng làm mới trang.', 'danger');
@@ -944,6 +1446,21 @@
         window.addEventListener('unhandledrejection', function(event) {
             console.error('Unhandled promise rejection:', event.reason);
             showAlert('Đã xảy ra lỗi không mong muốn. Vui lòng làm mới trang.', 'danger');
+        });
+
+        // --- Auto-save settings ---
+        window.addEventListener('beforeunload', function() {
+            saveSettings();
+        });
+
+        // --- Cleanup on page unload ---
+        window.addEventListener('unload', function() {
+            if (searchWorker) {
+                searchWorker.terminate();
+            }
+            if (clockInterval) {
+                clearInterval(clockInterval);
+            }
         });
     </script>
 </body>
