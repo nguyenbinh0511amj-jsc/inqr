@@ -558,7 +558,6 @@
                         <th draggable="true" data-column-id="sl_giao">SL giao</th>
                         <th draggable="true" data-column-id="ngay_giao">Ngày giao</th>
                         <th draggable="true" data-column-id="gio_giao">Giờ giao</th>
-                        <th draggable="true" data-column-id="ngay_nhan">Ngày nhận</th>
                         <th draggable="true" data-column-id="code_ho">Code</th>
                         <th draggable="true" data-column-id="ho_va_ten">Họ và tên</th>
                         <th draggable="true" data-column-id="trang_thai_giao">Trạng thái giao</th>
@@ -601,7 +600,6 @@
             { id: 'sl_giao', label: 'SL giao', dataKey: 'sl_giao' },
             { id: 'ngay_giao', label: 'Ngày giao', dataKey: 'ngay_giao' },
             { id: 'gio_giao', label: 'Giờ giao', dataKey: 'gio_giao' },
-            { id: 'ngay_nhan', label: 'Ngày nhận', dataKey: 'ngay_nhan' },
             { id: 'code_ho', label: 'Code', dataKey: 'code' },
             { id: 'ho_va_ten', label: 'Họ và tên', dataKey: 'ho_va_ten' },
             { id: 'trang_thai_giao', label: 'Trạng thái giao', dataKey: 'trang_thai_giao' }
@@ -870,7 +868,6 @@
                     <td data-column-id="sl_giao">${row.sl_giao || ''}</td>
                     <td data-column-id="ngay_giao">${row.ngay_giao || ''}</td>
                     <td data-column-id="gio_giao">${row.gio_giao || ''}</td>
-                    <td data-column-id="ngay_nhan">${row.ngay_nhan || ''}</td>
                     <td data-column-id="code_ho">${row.code || ''}</td>
                     <td data-column-id="ho_va_ten">${row.ho_va_ten || ''}</td>
                     <td data-column-id="trang_thai_giao">
@@ -909,7 +906,6 @@
                     'SL giao': row.sl_giao || '',
                     'Ngày giao': row.ngay_giao || '',
                     'Giờ giao': row.gio_giao || '',
-                    'Ngày nhận': row.ngay_nhan || '',
                     'Code': row.code || '',
                     'Họ và tên': row.ho_va_ten || '',
                     'Trạng thái giao': row.trang_thai_giao || ''
