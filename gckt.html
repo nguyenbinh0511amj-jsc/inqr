@@ -78,7 +78,7 @@
             display: flex;
             gap: 15px;
             margin-top: 10px;
-            position: relative;
+            align-items: center; /* Căn chỉnh các nút theo chiều dọc */
         }
 
         button {
@@ -150,20 +150,23 @@
         }
         
         .settings-btn {
-            background: none;
-            border: none;
+            /* Cập nhật style cho nút cài đặt */
+            background-color: #f3f4f6;
             color: #6b7280;
-            font-size: 24px;
+            border: 1px solid #d1d5db;
+            font-size: 20px;
             cursor: pointer;
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            transition: transform 0.2s ease;
-            z-index: 20;
+            padding: 8px 15px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            line-height: 1;
+            flex: 0;
+            margin-left: auto;
         }
         
         .settings-btn:hover {
-            transform: rotate(30deg);
+            transform: rotate(30deg) scale(1.1); /* Hiệu ứng hover mới */
+            background-color: #e5e7eb;
         }
 
         table {
@@ -477,6 +480,56 @@
         .close-btn:hover {
             color: #ef4444;
         }
+        
+        /* --- New styles for pagination --- */
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9fafb;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .pagination-controls label {
+            margin-bottom: 0;
+            font-weight: 500;
+        }
+        
+        #rowsPerPage {
+            padding: 8px;
+            width: 120px;
+        }
+        
+        #pageInfo {
+            font-weight: 600;
+            color: #4b5563;
+            min-width: 150px;
+            text-align: center;
+        }
+        
+        #prevPageBtn, #nextPageBtn {
+            background-color: #6b7280;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        #prevPageBtn:hover, #nextPageBtn:hover {
+            background-color: #4b5563;
+        }
+        
+        #prevPageBtn:disabled, #nextPageBtn:disabled {
+            background-color: #e5e7eb;
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -541,6 +594,20 @@
                 </div>
             </div>
             
+            <div class="pagination-controls">
+                <label for="rowsPerPage">Số dòng mỗi trang:</label>
+                <select id="rowsPerPage" onchange="changeRowsPerPage()">
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="200">200</option>
+                    <option value="all">Tất cả</option>
+                </select>
+                <button id="prevPageBtn" onclick="prevPage()" disabled>❮ Trang trước</button>
+                <span id="pageInfo"></span>
+                <button id="nextPageBtn" onclick="nextPage()" disabled>Trang sau ❯</button>
+            </div>
+            
             <div class="btn-group">
                 <button onclick="fetchData()" id="fetchBtn">
                     🔄 Tải dữ liệu
@@ -551,13 +618,13 @@
                 <button onclick="clearData()" id="clearBtn">
                     🗑️ Xóa dữ liệu
                 </button>
+                <button class="settings-btn" onclick="toggleSettingsPopup()">⚙️</button>
             </div>
         </div>
         
         <div id="status" class="status" style="display: none;"></div>
         
         <div class="data-table" id="dataTable" style="display: none;">
-            <button class="settings-btn" onclick="toggleSettingsPopup()">⚙️</button>
             <table id="dataTableContent">
                 <thead>
                     <tr>
@@ -604,6 +671,10 @@
         let selectedEndDate = null;
         let draggedColumn = null;
         
+        // Pagination state
+        let currentPage = 1;
+        let rowsPerPage = 25; // Default value
+
         const columnHeaders = [
             { id: 'stt', label: 'STT', dataKey: null },
             { id: 'order_kd', label: 'Order KD', dataKey: 'order_kd' },
@@ -877,7 +948,9 @@
                 }));
                 
                 applyFiltersAndSort();
+                currentPage = 1; // Reset to page 1 after new data is fetched
                 displayData();
+                renderPaginationControls(); // Initial render of pagination controls
                 
                 exportBtn.disabled = false;
                 showStatus(`✅ Đã tải thành công ${allData.length} bản ghi!`, 'success');
@@ -958,13 +1031,23 @@
                 // Sắp xếp giảm dần (ngày giờ mới nhất lên trên)
                 return dateTimeB - dateTimeA;
             });
+
+            currentPage = 1; // Reset to page 1 after filters are applied
         }
         
         function displayData() {
             const tableBody = document.getElementById('tableBody');
             tableBody.innerHTML = '';
             
-            filteredData.forEach((row, index) => {
+            // Pagination logic
+            let dataToDisplay = filteredData;
+            if (rowsPerPage !== 'all') {
+                const start = (currentPage - 1) * rowsPerPage;
+                const end = start + rowsPerPage;
+                dataToDisplay = filteredData.slice(start, end);
+            }
+
+            dataToDisplay.forEach((row, index) => {
                 const tr = document.createElement('tr');
                 let trangThaiClass = '';
                 if (row.trang_thai_giao === 'Đã giao') {
@@ -974,7 +1057,7 @@
                 }
                 
                 tr.innerHTML = `
-                    <td data-column-id="stt">${index + 1}</td>
+                    <td data-column-id="stt">${(rowsPerPage !== 'all' ? (currentPage - 1) * rowsPerPage : 0) + index + 1}</td>
                     <td data-column-id="order_kd">${row.order_kd || ''}</td>
                     <td data-column-id="ten_chi_tiet">${row.ten_chi_tiet || ''}</td>
                     <td data-column-id="sll">${row.sll || ''}</td>
@@ -994,6 +1077,51 @@
             
             document.getElementById('dataTable').style.display = 'block';
             applyColumnVisibility();
+            renderPaginationControls();
+        }
+
+        // New pagination functions
+        function renderPaginationControls() {
+            const totalRows = filteredData.length;
+            const pageInfo = document.getElementById('pageInfo');
+            const prevPageBtn = document.getElementById('prevPageBtn');
+            const nextPageBtn = document.getElementById('nextPageBtn');
+            const rowsPerPageSelect = document.getElementById('rowsPerPage');
+            
+            rowsPerPageSelect.value = rowsPerPage;
+
+            if (rowsPerPage === 'all' || totalRows === 0) {
+                pageInfo.textContent = `Hiển thị ${totalRows} bản ghi`;
+                prevPageBtn.disabled = true;
+                nextPageBtn.disabled = true;
+            } else {
+                const totalPages = Math.ceil(totalRows / rowsPerPage);
+                pageInfo.textContent = `Trang ${currentPage} / ${totalPages} (${totalRows} bản ghi)`;
+                prevPageBtn.disabled = currentPage === 1;
+                nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
+            }
+        }
+        
+        function nextPage() {
+            const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                displayData();
+            }
+        }
+        
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                displayData();
+            }
+        }
+        
+        function changeRowsPerPage() {
+            const select = document.getElementById('rowsPerPage');
+            rowsPerPage = select.value === 'all' ? 'all' : parseInt(select.value, 10);
+            currentPage = 1; // Reset to the first page when rows per page changes
+            displayData();
         }
         
         function exportToExcel() {
@@ -1069,6 +1197,12 @@
             clearDate('from');
             clearDate('to');
             
+            // Reset pagination state
+            currentPage = 1;
+            rowsPerPage = 25;
+            document.getElementById('rowsPerPage').value = 25;
+            renderPaginationControls();
+            
             hideStatus();
             
             showStatus('🗑️ Đã xóa dữ liệu', 'success');
@@ -1137,6 +1271,7 @@
         function renderSettingsPopup() {
             const columnList = document.getElementById('columnList');
             columnList.innerHTML = '';
+            
             columnHeaders.forEach(col => {
                 const label = document.createElement('label');
                 label.className = 'column-item';
@@ -1147,10 +1282,28 @@
                 columnList.appendChild(label);
             });
             
+            // Thêm nút "Hiện tất cả" mới
+            const showAllBtn = document.createElement('button');
+            showAllBtn.textContent = 'Hiện tất cả';
+            showAllBtn.className = 'apply-btn';
+            showAllBtn.style.marginTop = '20px';
+            showAllBtn.onclick = showAllColumns;
+            columnList.appendChild(showAllBtn);
+            
             const checkboxes = columnList.querySelectorAll('input[type="checkbox"]');
             checkboxes.forEach(checkbox => {
                 checkbox.addEventListener('change', toggleColumn);
             });
+        }
+        
+        // Hàm mới để hiện tất cả các cột
+        function showAllColumns() {
+            columnHeaders.forEach(col => {
+                visibleColumns[col.id] = true;
+            });
+            saveColumnVisibility();
+            applyColumnVisibility();
+            renderSettingsPopup(); // Cập nhật lại popup
         }
         
         function toggleSettingsPopup(event) {
