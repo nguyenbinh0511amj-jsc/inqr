@@ -3,1373 +3,319 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gia Công Kết Thúc</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <title>Dữ liệu GCKT</title>
     <style>
+        :root {
+            --primary-color: #007bff;
+            --success-color: #28a745;
+            --secondary-color: #6c757d;
+            --light-gray: #f8f9fa;
+            --dark-header: #343a40;
+            --border-color: #dee2e6;
+            --text-color: #212529;
+            --shadow: 0 4px 15px rgba(0, 0, 0, 0.07);
+        }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f4f7f9;
+            color: var(--text-color);
+            margin: 0;
             padding: 20px;
-            background-color: #f4f6f9;
-            color: #333;
-            min-height: 100vh;
         }
-
         .container {
-            background: #ffffff;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        }
-
-        h1 {
-            color: #2c3e50;
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 2.2em;
-            letter-spacing: -0.5px;
-            font-weight: 600;
-        }
-
-        .control-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            margin-bottom: 30px;
-            padding: 20px;
-            background-color: #f9fafb;
-            border-radius: 10px;
-            border: 1px solid #e5e7eb;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 20px;
-        }
-
-        .control-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        label {
-            font-weight: 500;
-            margin-bottom: 8px;
-            color: #6b7280;
-        }
-
-        input, select, button {
-            padding: 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: all 0.2s ease;
-        }
-
-        input:focus, select:focus {
-            outline: none;
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 15px;
-            margin-top: 10px;
-            align-items: center; /* Căn chỉnh các nút theo chiều dọc */
-        }
-
-        button {
-            flex: 1;
-            background-color: #2563eb;
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        
-        button#fetchBtn { background-color: #10b981; }
-        button#exportBtn { background-color: #f59e0b; }
-        button#clearBtn { background-color: #ef4444; }
-
-        button:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-        }
-        
-        button:disabled {
-            background-color: #e5e7eb;
-            color: #9ca3af;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .status {
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            font-weight: 500;
-            text-align: center;
-        }
-
-        .status.loading {
-            background-color: #fffbeb;
-            color: #d97706;
-            animation: pulse 2s infinite;
-        }
-
-        .status.success {
-            background-color: #d1fae5;
-            color: #065f46;
-        }
-
-        .status.error {
-            background-color: #fee2e2;
-            color: #991b1b;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-        .data-table {
-            margin-top: 30px;
-            overflow-x: auto;
+            max-width: 1400px;
+            margin: 0 auto;
             background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 25px 30px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            font-size: 15px;
+            color: #6c757d;
+            margin-top: 0;
+            margin-bottom: 25px;
+        }
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .toolbar .filters, .toolbar .actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .input-group {
             position: relative;
         }
-        
-        .settings-btn {
-            /* Cập nhật style cho nút cài đặt */
-            background-color: #f3f4f6;
-            color: #6b7280;
-            border: 1px solid #d1d5db;
-            font-size: 20px;
-            cursor: pointer;
-            padding: 8px 15px;
-            border-radius: 8px;
-            transition: all 0.2s ease;
-            line-height: 1;
-            flex: 0;
-            margin-left: auto;
+        .input-group .icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #aaa;
+            font-size: 16px;
         }
-        
-        .settings-btn:hover {
-            transform: rotate(30deg) scale(1.1); /* Hiệu ứng hover mới */
-            background-color: #e5e7eb;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .input-group input {
+            padding: 8px 12px 8px 38px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
             font-size: 14px;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
-
-        th {
-            background-color: #f3f4f6;
-            color: #4b5563;
-            padding: 15px 10px;
-            text-align: left;
-            font-weight: 600;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            cursor: move;
-            user-select: none;
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
         }
-        
-        th.is-dragging {
-            opacity: 0.5;
-        }
-
-        td {
-            padding: 12px 10px;
-            border-bottom: 1px solid #f3f4f6;
+        button {
+            padding: 9px 15px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            color: white;
             transition: background-color 0.2s ease;
         }
-
-        tr:hover {
-            background-color: #fafbfd;
+        #exportButton { background-color: var(--success-color); }
+        #exportButton:hover { background-color: #218838; }
+        #clearFiltersButton { background-color: var(--secondary-color); }
+        #clearFiltersButton:hover { background-color: #5a6268; }
+        button:disabled {
+            cursor: not-allowed;
+            background-color: #e9ecef;
+            color: #6c757d;
         }
-        
-        .hidden-column {
-            display: none;
+        .table-container {
+            overflow-x: auto;
         }
-
-        /* --- Style cho cột Trạng thái giao --- */
-        .status-cell {
-            font-weight: bold;
-            padding: 5px 10px;
-            border-radius: 5px;
-            display: inline-block;
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 0;
+        }
+        td {
+            border: none;
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 15px;
+            text-align: left;
+            vertical-align: middle;
             white-space: nowrap;
         }
-        
-        .status-delivered {
-            background-color: #d1fae5;
-            color: #065f46;
-        }
-        
-        .status-received {
-            background-color: #fee2e2;
-            color: #991b1b;
-        }
-        /* --- Hết style cột Trạng thái giao --- */
-
-        .date-range-picker {
-            position: relative;
-        }
-
-        .date-input-group {
-            display: flex;
-            align-items: center;
-            background: white;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            transition: all 0.2s ease;
-        }
-
-        .date-input-group:focus-within {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
-        }
-
-        .date-input-group input {
-            border: none;
-            outline: none;
-            background: none;
-            padding: 12px;
-            flex: 1;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .date-separator {
-            color: #9ca3af;
-            font-weight: bold;
-            margin: 0 8px;
-        }
-
-        .calendar-container {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 1px solid #d1d5db;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            z-index: 1000;
-            margin-top: 8px;
-            padding: 20px;
-        }
-        
-        .calendar-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        .nav-btn {
-            background: none;
-            border: none;
-            font-size: 18px;
-            color: #2563eb;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 6px;
-            transition: all 0.2s ease;
-        }
-        
-        .nav-btn:hover {
-            background: #e5e7eb;
-        }
-        
-        .month-year {
-            font-weight: bold;
-            font-size: 18px;
-            color: #333;
-            min-width: 120px;
-            text-align: center;
-        }
-        
-        .calendar-grid {
-            width: 100%;
-        }
-        
-        .calendar-days-header {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 2px;
-            margin-bottom: 10px;
-        }
-        
-        .calendar-days-header > div {
-            text-align: center;
-            font-weight: 500;
-            color: #6b7280;
-            padding: 10px 5px;
-            font-size: 14px;
-        }
-        
-        .calendar-days {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 2px;
-        }
-        
-        .calendar-day {
-            aspect-ratio: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            position: relative;
-        }
-        
-        .calendar-day:hover {
-            background: #e0e7ff;
-        }
-        
-        .calendar-day.other-month {
-            color: #ccc;
-        }
-        
-        .calendar-day.selected {
-            background-color: #2563eb;
+        th {
+            background-color: var(--dark-header);
             color: white;
-        }
-        
-        .calendar-day.in-range {
-            background-color: #bfdbfe;
-            color: #333;
-        }
-        
-        .calendar-day.today {
-            background-color: #fcd34d;
-            color: #333;
-            font-weight: bold;
-        }
-        
-        .calendar-footer {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid #e5e7eb;
-        }
-        
-        .clear-btn, .apply-btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
+            padding: 12px 15px;
             font-weight: 600;
-            transition: all 0.2s ease;
+            font-size: 13px;
+            text-transform: uppercase;
+            text-align: left;
+            vertical-align: middle;
+            white-space: nowrap;
         }
-        
-        .clear-btn {
-            background-color: #f9fafb;
-            color: #6b7280;
-            border: 1px solid #d1d5db;
+        tbody tr {
+            transition: background-color 0.15s ease-in-out;
         }
-        
-        .clear-btn:hover {
-            background-color: #e5e7eb;
+        tbody tr:hover {
+            background-color: #f1f3f5;
         }
-        
-        .apply-btn {
-            background-color: #2563eb;
-            color: white;
+        tbody tr:nth-child(even) {
+            background-color: var(--light-gray);
         }
-        
-        .apply-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+        tbody tr:nth-child(even):hover {
+            background-color: #e9ecef;
         }
-        
-        @media (max-width: 768px) {
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-            
-            .btn-group {
-                flex-direction: column;
-            }
+        .status-badge {
+            display: inline-block; padding: 5px 12px; border-radius: 15px;
+            font-size: 12px; font-weight: 600; text-align: center;
         }
-        
-        .settings-popup-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1001;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .settings-popup {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            width: 90%;
-            max-width: 400px;
-            max-height: 80vh;
-            overflow-y: auto;
-            position: relative;
-        }
-        
-        .settings-popup h3 {
-            margin-top: 0;
-            margin-bottom: 20px;
-            color: #2c3e50;
-            font-weight: 600;
-            border-bottom: 1px solid #e5e7eb;
-            padding-bottom: 10px;
-        }
-        
-        .column-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .column-item {
-            display: flex;
-            align-items: center;
-        }
-        
-        .column-item input[type="checkbox"] {
-            margin-right: 10px;
-            width: 18px;
-            height: 18px;
-        }
-        
-        .close-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            font-size: 24px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: #9ca3af;
-        }
-        
-        .close-btn:hover {
-            color: #ef4444;
-        }
-        
-        /* --- New styles for pagination --- */
-        .pagination-controls {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #f9fafb;
-            border-radius: 10px;
-            border: 1px solid #e5e7eb;
-        }
-        
-        .pagination-controls label {
-            margin-bottom: 0;
-            font-weight: 500;
-        }
-        
-        #rowsPerPage {
-            padding: 8px;
-            width: 120px;
-        }
-        
-        #pageInfo {
-            font-weight: 600;
-            color: #4b5563;
-            min-width: 150px;
-            text-align: center;
-        }
-        
-        #prevPageBtn, #nextPageBtn {
-            background-color: #6b7280;
-            color: white;
-            padding: 8px 15px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        #prevPageBtn:hover, #nextPageBtn:hover {
-            background-color: #4b5563;
-        }
-        
-        #prevPageBtn:disabled, #nextPageBtn:disabled {
-            background-color: #e5e7eb;
-            color: #9ca3af;
-            cursor: not-allowed;
-        }
+        .status-da-nhan { background-color: #fee2e2; color: #b91c1c; } /* Đỏ */
+        .status-da-giao { background-color: #dcfce7; color: #166534; } /* Xanh */
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="control-panel">
-            <div class="form-row">
-                <div class="control-group">
-                    <label for="searchText">Tìm kiếm:</label>
-                    <input type="text" id="searchText" placeholder="Tìm kiếm trong tất cả các trường...">
+        <h1>GCKT Bộ phận sản xuất</h1>
+        <div class="toolbar">
+            <div class="filters">
+                <div class="input-group">
+                    <span class="icon">🔍</span>
+                    <input type="text" id="searchInput" placeholder="Tìm kiếm..." disabled>
                 </div>
-                
-                <div class="control-group">
-                    <label>Từ ngày:</label>
-                    <div class="date-range-picker">
-                        <div class="date-input-group">
-                            <input type="text" id="fromDate" placeholder="dd/mm/yyyy" onclick="toggleCalendar('from')">
-                        </div>
-                        <div id="fromCalendarContainer" class="calendar-container" style="display: none;">
-                            <div class="calendar-header">
-                                <button type="button" onclick="previousMonth('from')" class="nav-btn">❮</button>
-                                <span id="fromCurrentMonth" class="month-year"></span>
-                                <button type="button" onclick="nextMonth('from')" class="nav-btn">❯</button>
-                            </div>
-                            <div class="calendar-grid">
-                                <div class="calendar-days-header">
-                                    <div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div><div>CN</div>
-                                </div>
-                                <div id="fromCalendarDays" class="calendar-days"></div>
-                            </div>
-                            <div class="calendar-footer">
-                                <button type="button" onclick="clearDate('from')" class="clear-btn">Xóa</button>
-                                <button type="button" onclick="applyDate('from')" class="apply-btn">Chọn</button>
-                            </div>
-                        </div>
-                    </div>
+                <div class="input-group">
+                    <span class="icon">📅</span>
+                    <input type="date" id="startDate" title="Lọc từ ngày" disabled>
                 </div>
-                
-                <div class="control-group">
-                    <label>Đến ngày:</label>
-                    <div class="date-range-picker">
-                        <div class="date-input-group">
-                            <input type="text" id="toDate" placeholder="dd/mm/yyyy" onclick="toggleCalendar('to')">
-                        </div>
-                        <div id="toCalendarContainer" class="calendar-container" style="display: none;">
-                            <div class="calendar-header">
-                                <button type="button" onclick="previousMonth('to')" class="nav-btn">❮</button>
-                                <span id="toCurrentMonth" class="month-year"></span>
-                                <button type="button" onclick="nextMonth('to')" class="nav-btn">❯</button>
-                            </div>
-                            <div class="calendar-grid">
-                                <div class="calendar-days-header">
-                                    <div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div><div>CN</div>
-                                </div>
-                                <div id="toCalendarDays" class="calendar-days"></div>
-                            </div>
-                            <div class="calendar-footer">
-                                <button type="button" onclick="clearDate('to')" class="clear-btn">Xóa</button>
-                                <button type="button" onclick="applyDate('to')" class="apply-btn">Chọn</button>
-                            </div>
-                        </div>
-                    </div>
+                <div class="input-group">
+                    <span class="icon">📅</span>
+                    <input type="date" id="endDate" title="Lọc đến ngày" disabled>
                 </div>
             </div>
-            
-            <div class="pagination-controls">
-                <label for="rowsPerPage">Số dòng mỗi trang:</label>
-                <select id="rowsPerPage" onchange="changeRowsPerPage()">
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                    <option value="200">200</option>
-                    <option value="all">Tất cả</option>
-                </select>
-                <button id="prevPageBtn" onclick="prevPage()" disabled>❮ Trang trước</button>
-                <span id="pageInfo"></span>
-                <button id="nextPageBtn" onclick="nextPage()" disabled>Trang sau ❯</button>
+            <div class="actions">
+                <button id="clearFiltersButton" disabled>Xoá Lọc</button>
+                <button id="exportButton" disabled>Xuất ra Excel</button>
             </div>
-            
-            <div class="btn-group">
-                <button onclick="fetchData()" id="fetchBtn">
-                    🔄 Tải dữ liệu
-                </button>
-                <button onclick="exportToExcel()" id="exportBtn" disabled>
-                    📥 Xuất Excel
-                </button>
-                <button onclick="clearData()" id="clearBtn">
-                    🗑️ Xóa dữ liệu
-                </button>
-                <button class="settings-btn" onclick="toggleSettingsPopup()">⚙️</button>
-            </div>
-        </div>
-        
-        <div id="status" class="status" style="display: none;"></div>
-        
-        <div class="data-table" id="dataTable" style="display: none;">
-            <table id="dataTableContent">
-                <thead>
-                    <tr>
-                        <th draggable="true" data-column-id="stt">STT</th>
-                        <th draggable="true" data-column-id="order_kd">Order KD</th>
-                        <th draggable="true" data-column-id="ten_chi_tiet">Tên chi tiết</th>
-                        <th draggable="true" data-column-id="sll">SLL</th>
-                        <th draggable="true" data-column-id="tinh_chat">Tính chất</th>
-                        <th draggable="true" data-column-id="so_file">Số file</th>
-                        <th draggable="true" data-column-id="sl_giao">SL giao</th>
-                        <th draggable="true" data-column-id="ngay_giao">Ngày giao</th>
-                        <th draggable="true" data-column-id="gio_giao">Giờ giao</th>
-                        <th draggable="true" data-column-id="code_ho">Code</th>
-                        <th draggable="true" data-column-id="ho_va_ten">Họ và tên</th>
-                        <th draggable="true" data-column-id="trang_thai_giao">Trạng thái giao</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody">
-                </tbody>
-            </table>
         </div>
 
-        <div id="settingsPopupOverlay" class="settings-popup-overlay" onclick="toggleSettingsPopup(event)">
-            <div class="settings-popup" onclick="event.stopPropagation()">
-                <button class="close-btn" onclick="toggleSettingsPopup()">×</button>
-                <h3>Ẩn/Hiện Cột</h3>
-                <div id="columnList" class="column-list">
-                </div>
-            </div>
+        <div class="table-container" id="dataTable">
+             <p>Đang kết nối đến AppSheet API, vui lòng chờ...</p>
         </div>
     </div>
 
+    <script type="text/javascript" src="https://unpkg.com/xlsx@0.15.1/dist/xlsx.full.min.js"></script>
     <script>
-        const APP_ID = 'ff9e4275-8f63-401c-aa2c-37c4ac19402b';
-        const ACCESS_KEY = 'V2-5dzLj-LBS00-fF6na-7ZuUi-jir6Y-4Q0LP-SitAw-IgVUx';
-        const TABLE_NAME = 'gckt_giao_pkt';
+        document.addEventListener('DOMContentLoaded', fetchAppSheetData);
         
-        let allData = [];
-        let filteredData = [];
-        // Khôi phục lại biến currentDate cho mỗi bộ lịch
-        let fromCurrentDate = new Date();
-        let toCurrentDate = new Date();
-        let selectedStartDate = null;
-        let selectedEndDate = null;
-        let draggedColumn = null;
-        
-        // Pagination state
-        let currentPage = 1;
-        let rowsPerPage = 25; // Default value
+        let originalData = [];
+        const exportButton = document.getElementById('exportButton');
+        const searchInput = document.getElementById('searchInput');
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        const clearFiltersButton = document.getElementById('clearFiltersButton');
 
-        const columnHeaders = [
-            { id: 'stt', label: 'STT', dataKey: null },
-            { id: 'order_kd', label: 'Order KD', dataKey: 'order_kd' },
-            { id: 'ten_chi_tiet', label: 'Tên chi tiết', dataKey: 'ten_chi_tiet' },
-            { id: 'sll', label: 'SLL', dataKey: 'sll' },
-            { id: 'tinh_chat', label: 'Tính chất', dataKey: 'tinh_chat' },
-            { id: 'so_file', label: 'Số file', dataKey: 'so_file' },
-            { id: 'sl_giao', label: 'SL giao', dataKey: 'sl_giao' },
-            { id: 'ngay_giao', label: 'Ngày giao', dataKey: 'ngay_giao' },
-            { id: 'gio_giao', label: 'Giờ giao', dataKey: 'gio_giao' },
-            { id: 'code_ho', label: 'Code', dataKey: 'code' },
-            { id: 'ho_va_ten', label: 'Họ và tên', dataKey: 'ho_va_ten' },
-            { id: 'trang_thai_giao', label: 'Trạng thái giao', dataKey: 'trang_thai_giao' }
-        ];
+        searchInput.addEventListener('input', applyFilters);
+        startDateInput.addEventListener('input', applyFilters);
+        endDateInput.addEventListener('input', applyFilters);
+        exportButton.addEventListener('click', () => exportTableToExcel('resultsTable', 'Export_gckt_giao_pkt.xlsx'));
+        clearFiltersButton.addEventListener('click', clearAllFilters);
 
-        let visibleColumns = {};
-        
-        function showStatus(message, type = 'loading') {
-            const statusDiv = document.getElementById('status');
-            statusDiv.textContent = message;
-            statusDiv.className = `status ${type}`;
-            statusDiv.style.display = 'block';
-        }
-        
-        function hideStatus() {
-            document.getElementById('status').style.display = 'none';
-        }
+        async function fetchAppSheetData() {
+            const dataDiv = document.getElementById('dataTable');
+            dataDiv.innerHTML = '<p>Đang tải dữ liệu, vui lòng chờ...</p>';
+            
+            const appId = 'ff9e4275-8f63-401c-aa2c-37c4ac19402b';
+            const accessKey = 'V2-5dzLj-LBS00-fF6na-7ZuUi-jir6Y-4Q0LP-SitAw-IgVUx';
+            const tableName = 'gckt_giao_pkt';
+            const url = `https://api.appsheet.com/api/v2/apps/${appId}/tables/${tableName}/Action`;
+            const headers = new Headers({ 'Content-Type': 'application/json', 'applicationAccessKey': accessKey });
+            const body = JSON.stringify({ "Action": "Find", "Properties": { "Locale": "en-US" }, "Rows": [] });
 
-        // Cập nhật hàm toggleCalendar để nhận tham số 'from' hoặc 'to'
-        function toggleCalendar(type) {
-            const calendar = document.getElementById(`${type}CalendarContainer`);
-            if (calendar.style.display === 'none') {
-                calendar.style.display = 'block';
-                renderCalendar(type);
-            } else {
-                calendar.style.display = 'none';
-            }
-        }
-        
-        // Cập nhật hàm renderCalendar để nhận tham số 'from' hoặc 'to'
-        function renderCalendar(type) {
-            const monthNames = [
-                'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
-                'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
-            ];
-            
-            const calendarDate = type === 'from' ? fromCurrentDate : toCurrentDate;
-            document.getElementById(`${type}CurrentMonth`).textContent = 
-                `${monthNames[calendarDate.getMonth()]} ${calendarDate.getFullYear()}`;
-            
-            const firstDay = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), 1);
-            const startDate = new Date(firstDay);
-            startDate.setDate(startDate.getDate() - (firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1));
-            
-            const calendarDays = document.getElementById(`${type}CalendarDays`);
-            calendarDays.innerHTML = '';
-            
-            for (let i = 0; i < 42; i++) {
-                const date = new Date(startDate);
-                date.setDate(startDate.getDate() + i);
-                
-                const dayElement = document.createElement('div');
-                dayElement.className = 'calendar-day';
-                dayElement.textContent = date.getDate();
-                
-                if (date.getMonth() !== calendarDate.getMonth()) {
-                    dayElement.classList.add('other-month');
-                }
-                
-                if (isToday(date)) {
-                    dayElement.classList.add('today');
-                }
-                
-                if (selectedStartDate && isSameDay(date, selectedStartDate)) {
-                    dayElement.classList.add('selected');
-                }
-                
-                if (selectedEndDate && isSameDay(date, selectedEndDate)) {
-                    dayElement.classList.add('selected');
-                }
-                
-                dayElement.addEventListener('click', () => selectDate(date, type));
-                calendarDays.appendChild(dayElement);
-            }
-        }
-        
-        // Cập nhật hàm selectDate để xử lý chọn ngày cho từng bộ lịch
-        function selectDate(date, type) {
-            if (type === 'from') {
-                selectedStartDate = new Date(date);
-            } else {
-                selectedEndDate = new Date(date);
-            }
-            renderCalendar('from');
-            renderCalendar('to');
-        }
-        
-        function isToday(date) {
-            const today = new Date();
-            return date.getDate() === today.getDate() &&
-                   date.getMonth() === today.getMonth() &&
-                   date.getFullYear() === today.getFullYear();
-        }
-        
-        function isSameDay(date1, date2) {
-            return date1.getDate() === date2.getDate() &&
-                   date1.getMonth() === date2.getMonth() &&
-                   date1.getFullYear() === date2.getFullYear();
-        }
-        
-        // Cập nhật hàm previousMonth để nhận tham số 'from' hoặc 'to'
-        function previousMonth(type) {
-            const calendarDate = type === 'from' ? fromCurrentDate : toCurrentDate;
-            calendarDate.setMonth(calendarDate.getMonth() - 1);
-            renderCalendar(type);
-        }
-        
-        // Cập nhật hàm nextMonth để nhận tham số 'from' hoặc 'to'
-        function nextMonth(type) {
-            const calendarDate = type === 'from' ? fromCurrentDate : toCurrentDate;
-            calendarDate.setMonth(calendarDate.getMonth() + 1);
-            renderCalendar(type);
-        }
-        
-        // Cập nhật hàm clearDate để nhận tham số 'from' hoặc 'to'
-        function clearDate(type) {
-            if (type === 'from') {
-                selectedStartDate = null;
-                document.getElementById('fromDate').value = '';
-            } else {
-                selectedEndDate = null;
-                document.getElementById('toDate').value = '';
-            }
-            renderCalendar(type);
-            
-            if (allData.length > 0) {
-                applyFiltersAndSort();
-                displayData();
-            }
-        }
-        
-        // Cập nhật hàm applyDate để nhận tham số 'from' hoặc 'to'
-        function applyDate(type) {
-            if (type === 'from' && selectedStartDate) {
-                document.getElementById('fromDate').value = formatDate(selectedStartDate);
-            }
-            if (type === 'to' && selectedEndDate) {
-                document.getElementById('toDate').value = formatDate(selectedEndDate);
-            }
-            document.getElementById(`${type}CalendarContainer`).style.display = 'none';
-            
-            if (allData.length > 0) {
-                applyFiltersAndSort();
-                displayData();
-            }
-        }
-        
-        function formatDate(date) {
-            const day = date.getDate().toString().padStart(2, '0');
-            const month = (date.getMonth() + 1).toString().padStart(2, '0');
-            const year = date.getFullYear();
-            return `${day}/${month}/${year}`;
-        }
-        
-        function debugDateFormat(data) {
-            if (data.length > 0) {
-                console.log('Dữ liệu mẫu từ API:', data[0]);
-                console.log('Định dạng ngày giao:', data[0].ngay_giao);
-                console.log('Kiểu dữ liệu:', typeof data[0].ngay_giao);
-            }
-        }
-        
-        function normalizeDate(dateStr) {
-            if (!dateStr) return '';
-            
-            if (dateStr.includes('-')) {
-                const date = new Date(dateStr);
-                if (!isNaN(date.getTime())) {
-                    const day = date.getDate().toString().padStart(2, '0');
-                    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-                    const year = date.getFullYear();
-                    return `${day}/${month}/${year}`;
-                }
-            }
-            
-            if (dateStr.includes('/')) {
-                const parts = dateStr.split('/');
-                if (parts.length === 3) {
-                    const first = parseInt(parts[0], 10);
-                    const second = parseInt(parts[1], 10);
-                    const year = parseInt(parts[2], 10);
-                    
-                    if (first > 12 || (first <= 12 && second <= 12)) {
-                        if (first <= 12 && second <= 12) {
-                            const result = `${parts[1].padStart(2, '0')}/${parts[0].padStart(2, '0')}/${year}`;
-                            return result;
-                        }
-                    }
-                    
-                    const result = `${parts[0].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${year}`;
-                    return result;
-                }
-            }
-            
-            return dateStr;
-        }
-        
-        function parseDate(dateStr) {
-            if (!dateStr || !dateStr.includes('/')) return null;
-            const parts = dateStr.split('/');
-            if (parts.length !== 3) return null;
-            
-            const day = parseInt(parts[0], 10);
-            const month = parseInt(parts[1], 10);  
-            const year = parseInt(parts[2], 10);
-            
-            if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
-            if (day < 1 || day > 31 || month < 1 || month > 12) return null;
-            
-            return new Date(year, month - 1, day);
-        }
-        
-        document.addEventListener('click', function(event) {
-            const fromCalendar = document.getElementById('fromCalendarContainer');
-            const toCalendar = document.getElementById('toCalendarContainer');
-            const fromDateInputGroup = document.getElementById('fromDate').closest('.date-range-picker');
-            const toDateInputGroup = document.getElementById('toDate').closest('.date-range-picker');
-            
-            if (!fromDateInputGroup.contains(event.target) && fromCalendar.style.display === 'block') {
-                fromCalendar.style.display = 'none';
-            }
-            if (!toDateInputGroup.contains(event.target) && toCalendar.style.display === 'block') {
-                toCalendar.style.display = 'none';
-            }
-        });
-        
-        async function fetchData() {
-            const fetchBtn = document.getElementById('fetchBtn');
-            const exportBtn = document.getElementById('exportBtn');
-            
-            fetchBtn.disabled = true;
-            showStatus('🔄 Đang tải dữ liệu từ AppSheet...', 'loading');
-            
             try {
-                const url = `https://api.appsheet.com/api/v2/apps/${APP_ID}/tables/${TABLE_NAME}/Action`;
-                
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'ApplicationAccessKey': ACCESS_KEY,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        "Action": "Find",
-                        "Properties": {},
-                        "Rows": []
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                
-                debugDateFormat(data);
-                
-                allData = data.map(row => ({
-                    ...row,
-                    ngay_giao: normalizeDate(row.ngay_giao)
-                }));
-                
-                applyFiltersAndSort();
-                currentPage = 1; // Reset to page 1 after new data is fetched
-                displayData();
-                renderPaginationControls(); // Initial render of pagination controls
-                
-                exportBtn.disabled = false;
-                showStatus(`✅ Đã tải thành công ${allData.length} bản ghi!`, 'success');
-                
-                setTimeout(hideStatus, 3000);
-                
+                const response = await fetch(url, { method: 'POST', headers: headers, body: body });
+                if (!response.ok) throw new Error(`Lỗi API: ${response.status} ${response.statusText}`);
+                originalData = await response.json();
+                applyFilters();
+                exportButton.disabled = false;
+                searchInput.disabled = false;
+                startDateInput.disabled = false;
+                endDateInput.disabled = false;
+                clearFiltersButton.disabled = false;
             } catch (error) {
-                console.error('Error:', error);
-                showStatus(`❌ Lỗi khi tải dữ liệu: ${error.message}`, 'error');
-                exportBtn.disabled = true;
-            } finally {
-                fetchBtn.disabled = false;
-            }
+                dataDiv.innerHTML = `<p style="color: red;">Tải dữ liệu thất bại. Lỗi: ${error.message}. Vui lòng thử làm mới lại trang (F5).</p>`;
+            } 
         }
-        
-        function parseDateTime(ngayGiao, gioGiao) {
-            const date = parseDate(ngayGiao);
-            if (!date) return null;
-            
-            if (!gioGiao) return date; // Nếu không có giờ, chỉ dùng ngày
-            
-            // Xử lý định dạng giờ: HH:mm hoặc HH:mm:ss
-            const timeMatch = gioGiao.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
-            if (timeMatch) {
-                const hours = parseInt(timeMatch[1], 10);
-                const minutes = parseInt(timeMatch[2], 10);
-                const seconds = parseInt(timeMatch[3] || '0', 10);
-                
-                date.setHours(hours, minutes, seconds, 0);
-            }
-            
-            return date;
+
+        function clearAllFilters() {
+            searchInput.value = '';
+            startDateInput.value = '';
+            endDateInput.value = '';
+            applyFilters();
         }
-        
-        function applyFiltersAndSort() {
-            filteredData = [...allData];
-            
-            const searchText = document.getElementById('searchText').value.toLowerCase();
-            if (searchText) {
-                filteredData = filteredData.filter(row => {
-                    return Object.values(row).some(value => 
-                        (value || '').toString().toLowerCase().includes(searchText)
+
+        function applyFilters() {
+            const searchText = searchInput.value.toLowerCase();
+            const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
+            const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
+            if (startDate) startDate.setHours(0, 0, 0, 0);
+            if (endDate) endDate.setHours(23, 59, 59, 999);
+            let filteredData = originalData.filter(row => {
+                const ngayGiao = row.ngay_giao ? new Date(row.ngay_giao) : null;
+                if (startDate && (!ngayGiao || ngayGiao < startDate)) return false;
+                if (endDate && (!ngayGiao || ngayGiao > endDate)) return false;
+                if (searchText && !Object.values(row).join(' ').toLowerCase().includes(searchText)) return false;
+                return true;
+            });
+            displayData(filteredData);
+        }
+
+        function getCombinedDateTime(row) {
+            if (!row.ngay_giao) return null;
+            const d = new Date(row.ngay_giao);
+            if (isNaN(d.getTime())) return null;
+            if (row.gio_giao && typeof row.gio_giao === 'string') {
+                const timeParts = row.gio_giao.split(':');
+                if (timeParts.length >= 2) {
+                    d.setUTCHours(
+                        parseInt(timeParts[0], 10), parseInt(timeParts[1], 10),
+                        timeParts.length > 2 ? parseInt(timeParts[2], 10) : 0, 0
                     );
-                });
-            }
-            
-            const fromDateStr = document.getElementById('fromDate').value;
-            const toDateStr = document.getElementById('toDate').value;
-            
-            if (fromDateStr || toDateStr) {
-                filteredData = filteredData.filter(row => {
-                    const ngayGiao = row.ngay_giao;
-                    if (!ngayGiao) return false;
-                    
-                    const dateToCompare = parseDate(ngayGiao);
-                    if (!dateToCompare) return false;
-                    
-                    const fromDate = parseDate(fromDateStr);
-                    const toDate = parseDate(toDateStr);
-                    
-                    if (fromDate && dateToCompare < fromDate) return false;
-                    if (toDate && dateToCompare > toDate) return false;
-                    
-                    return true;
-                });
-            }
-            
-            // Sắp xếp theo ngày và giờ giao giảm dần (dữ liệu mới nhất lên trên)
-            filteredData.sort((a, b) => {
-                const dateTimeA = parseDateTime(a.ngay_giao, a.gio_giao);
-                const dateTimeB = parseDateTime(b.ngay_giao, b.gio_giao);
-                
-                // Xử lý trường hợp null/undefined
-                if (!dateTimeA && !dateTimeB) return 0;
-                if (!dateTimeA) return 1; // Đẩy dữ liệu không có ngày/giờ xuống dưới
-                if (!dateTimeB) return -1; // Đẩy dữ liệu không có ngày/giờ xuống dưới
-                
-                // Sắp xếp giảm dần (ngày giờ mới nhất lên trên)
-                return dateTimeB - dateTimeA;
-            });
-
-            currentPage = 1; // Reset to page 1 after filters are applied
-        }
-        
-        function displayData() {
-            const tableBody = document.getElementById('tableBody');
-            tableBody.innerHTML = '';
-            
-            // Pagination logic
-            let dataToDisplay = filteredData;
-            if (rowsPerPage !== 'all') {
-                const start = (currentPage - 1) * rowsPerPage;
-                const end = start + rowsPerPage;
-                dataToDisplay = filteredData.slice(start, end);
-            }
-
-            dataToDisplay.forEach((row, index) => {
-                const tr = document.createElement('tr');
-                let trangThaiClass = '';
-                if (row.trang_thai_giao === 'Đã giao') {
-                    trangThaiClass = 'status-delivered';
-                } else if (row.trang_thai_giao === 'Đã nhận') {
-                    trangThaiClass = 'status-received';
                 }
-                
-                tr.innerHTML = `
-                    <td data-column-id="stt">${(rowsPerPage !== 'all' ? (currentPage - 1) * rowsPerPage : 0) + index + 1}</td>
-                    <td data-column-id="order_kd">${row.order_kd || ''}</td>
-                    <td data-column-id="ten_chi_tiet">${row.ten_chi_tiet || ''}</td>
-                    <td data-column-id="sll">${row.sll || ''}</td>
-                    <td data-column-id="tinh_chat">${row.tinh_chat || ''}</td>
-                    <td data-column-id="so_file">${row.so_file || ''}</td>
-                    <td data-column-id="sl_giao">${row.sl_giao || ''}</td>
-                    <td data-column-id="ngay_giao">${row.ngay_giao || ''}</td>
-                    <td data-column-id="gio_giao">${row.gio_giao || ''}</td>
-                    <td data-column-id="code_ho">${row.code || ''}</td>
-                    <td data-column-id="ho_va_ten">${row.ho_va_ten || ''}</td>
-                    <td data-column-id="trang_thai_giao">
-                        <span class="status-cell ${trangThaiClass}">${row.trang_thai_giao || ''}</span>
-                    </td>
-                `;
-                tableBody.appendChild(tr);
-            });
-            
-            document.getElementById('dataTable').style.display = 'block';
-            applyColumnVisibility();
-            renderPaginationControls();
+            }
+            return d;
         }
 
-        // New pagination functions
-        function renderPaginationControls() {
-            const totalRows = filteredData.length;
-            const pageInfo = document.getElementById('pageInfo');
-            const prevPageBtn = document.getElementById('prevPageBtn');
-            const nextPageBtn = document.getElementById('nextPageBtn');
-            const rowsPerPageSelect = document.getElementById('rowsPerPage');
-            
-            rowsPerPageSelect.value = rowsPerPage;
-
-            if (rowsPerPage === 'all' || totalRows === 0) {
-                pageInfo.textContent = `Hiển thị ${totalRows} bản ghi`;
-                prevPageBtn.disabled = true;
-                nextPageBtn.disabled = true;
-            } else {
-                const totalPages = Math.ceil(totalRows / rowsPerPage);
-                pageInfo.textContent = `Trang ${currentPage} / ${totalPages} (${totalRows} bản ghi)`;
-                prevPageBtn.disabled = currentPage === 1;
-                nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
-            }
-        }
-        
-        function nextPage() {
-            const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-            if (currentPage < totalPages) {
-                currentPage++;
-                displayData();
-            }
-        }
-        
-        function prevPage() {
-            if (currentPage > 1) {
-                currentPage--;
-                displayData();
-            }
-        }
-        
-        function changeRowsPerPage() {
-            const select = document.getElementById('rowsPerPage');
-            rowsPerPage = select.value === 'all' ? 'all' : parseInt(select.value, 10);
-            currentPage = 1; // Reset to the first page when rows per page changes
-            displayData();
-        }
-        
-        function exportToExcel() {
-            if (filteredData.length === 0) {
-                showStatus('❌ Không có dữ liệu để xuất!', 'error');
+        function displayData(data) {
+            const dataDiv = document.getElementById('dataTable');
+            if (!data || data.length === 0) {
+                dataDiv.innerHTML = '<p>Không có dữ liệu phù hợp với bộ lọc của bạn.</p>';
                 return;
             }
-            
-            showStatus('📄 Đang tạo file Excel...', 'loading');
-            
-            const tableHeader = document.querySelector('#dataTableContent thead tr');
-            const headers = Array.from(tableHeader.children)
-                                 .filter(th => !th.classList.contains('hidden-column'))
-                                 .map(th => th.textContent.trim());
-
-            const excelData = filteredData.map((row, index) => {
-                const newRow = {};
-                const dataMapping = {
-                    'STT': index + 1,
-                    'Order KD': row.order_kd || '',
-                    'Tên chi tiết': row.ten_chi_tiet || '',
-                    'SLL': row.sll || '',
-                    'Tính chất': row.tinh_chat || '',
-                    'Số file': row.so_file || '',
-                    'SL giao': row.sl_giao || '',
-                    'Ngày giao': row.ngay_giao || '',
-                    'Giờ giao': row.gio_giao || '',
-                    'Code': row.code || '',
-                    'Họ và tên': row.ho_va_ten || '',
-                    'Trạng thái giao': row.trang_thai_giao || ''
-                };
-                
-                headers.forEach(header => {
-                    newRow[header] = dataMapping[header];
-                });
-
-                return newRow;
-            });
-            
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.json_to_sheet(excelData);
-            
-            const colWidths = [];
-            headers.forEach((header, index) => {
-                const maxLength = Math.max(
-                    header.length,
-                    ...excelData.map(row => (row[header] || '').toString().length)
-                );
-                colWidths[index] = { width: Math.min(maxLength + 2, 50) };
-            });
-            ws['!cols'] = colWidths;
-            
-            XLSX.utils.book_append_sheet(wb, ws, 'GCKT_Giao_PKT');
-            
-            const now = new Date();
-            const timestamp = now.toISOString().slice(0, 19).replace(/:/g, '-');
-            const filename = `GCKT_Giao_PKT_${timestamp}.xlsx`;
-            
-            XLSX.writeFile(wb, filename);
-            
-            showStatus(`✅ Đã xuất thành công ${filteredData.length} bản ghi ra file: ${filename}`, 'success');
-            setTimeout(hideStatus, 5000);
-        }
-        
-        function clearData() {
-            allData = [];
-            filteredData = [];
-            document.getElementById('tableBody').innerHTML = '';
-            document.getElementById('dataTable').style.display = 'none';
-            document.getElementById('exportBtn').disabled = true;
-            
-            document.getElementById('searchText').value = '';
-            clearDate('from');
-            clearDate('to');
-            
-            // Reset pagination state
-            currentPage = 1;
-            rowsPerPage = 25;
-            document.getElementById('rowsPerPage').value = 25;
-            renderPaginationControls();
-            
-            hideStatus();
-            
-            showStatus('🗑️ Đã xóa dữ liệu', 'success');
-            setTimeout(hideStatus, 2000);
-        }
-        
-        function handleDragStart(e) {
-            draggedColumn = e.target;
-            e.target.classList.add('is-dragging');
-            e.dataTransfer.effectAllowed = 'move';
-        }
-
-        function handleDragOver(e) {
-            e.preventDefault(); 
-            const target = e.target.closest('th');
-            if (target && target !== draggedColumn) {
-                const rect = target.getBoundingClientRect();
-                const x = e.clientX;
-                const insertBefore = x < rect.left + rect.width / 2;
-                if (insertBefore) {
-                    target.parentNode.insertBefore(draggedColumn, target);
-                } else {
-                    target.parentNode.insertBefore(draggedColumn, target.nextSibling);
-                }
-            }
-        }
-        
-        function handleDrop(e) {
-            e.preventDefault();
-            if (draggedColumn) {
-                draggedColumn.classList.remove('is-dragging');
-                
-                const headerCells = Array.from(document.querySelectorAll('#dataTableContent thead th'));
-                const headerOrder = headerCells.map(th => Array.from(th.parentNode.children).indexOf(th));
-                
-                const tableRows = document.querySelectorAll('#dataTableContent tbody tr');
-                tableRows.forEach(row => {
-                    const cells = Array.from(row.children);
-                    const newCells = headerOrder.map(index => cells[index]);
-                    newCells.forEach(cell => row.appendChild(cell));
-                });
-                
-                draggedColumn = null;
-            }
-        }
-        
-        function addDragAndDropListeners() {
-            const headers = document.querySelectorAll('#dataTableContent th');
-            headers.forEach(header => {
-                header.addEventListener('dragstart', handleDragStart);
-                header.addEventListener('dragover', handleDragOver);
-                header.addEventListener('drop', handleDrop);
-                header.addEventListener('dragenter', e => e.preventDefault());
-                header.addEventListener('dragleave', e => e.preventDefault());
-            });
-        }
-        
-        function initializeColumnVisibility() {
-            const storedVisibility = JSON.parse(localStorage.getItem('columnVisibility') || '{}');
-            columnHeaders.forEach(col => {
-                visibleColumns[col.id] = storedVisibility[col.id] !== false;
-            });
-            renderSettingsPopup();
-        }
-        
-        function renderSettingsPopup() {
-            const columnList = document.getElementById('columnList');
-            columnList.innerHTML = '';
-            
-            columnHeaders.forEach(col => {
-                const label = document.createElement('label');
-                label.className = 'column-item';
-                label.innerHTML = `
-                    <input type="checkbox" data-column-id="${col.id}" ${visibleColumns[col.id] ? 'checked' : ''}>
-                    <span>${col.label}</span>
-                `;
-                columnList.appendChild(label);
-            });
-            
-            // Thêm nút "Hiện tất cả" mới
-            const showAllBtn = document.createElement('button');
-            showAllBtn.textContent = 'Hiện tất cả';
-            showAllBtn.className = 'apply-btn';
-            showAllBtn.style.marginTop = '20px';
-            showAllBtn.onclick = showAllColumns;
-            columnList.appendChild(showAllBtn);
-            
-            const checkboxes = columnList.querySelectorAll('input[type="checkbox"]');
-            checkboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', toggleColumn);
-            });
-        }
-        
-        // Hàm mới để hiện tất cả các cột
-        function showAllColumns() {
-            columnHeaders.forEach(col => {
-                visibleColumns[col.id] = true;
-            });
-            saveColumnVisibility();
-            applyColumnVisibility();
-            renderSettingsPopup(); // Cập nhật lại popup
-        }
-        
-        function toggleSettingsPopup(event) {
-            const popupOverlay = document.getElementById('settingsPopupOverlay');
-            if (event && event.target === popupOverlay) {
-                 popupOverlay.style.display = 'none';
-                 return;
-            }
-            if (popupOverlay.style.display === 'flex') {
-                popupOverlay.style.display = 'none';
-            } else {
-                popupOverlay.style.display = 'flex';
-                renderSettingsPopup();
-            }
-        }
-        
-        function toggleColumn(e) {
-            const columnId = e.target.dataset.columnId;
-            visibleColumns[columnId] = e.target.checked;
-            saveColumnVisibility();
-            applyColumnVisibility();
-        }
-        
-        function saveColumnVisibility() {
-            localStorage.setItem('columnVisibility', JSON.stringify(visibleColumns));
-        }
-
-        function applyColumnVisibility() {
-            const table = document.getElementById('dataTableContent');
-            const headerCells = table.querySelectorAll('thead th');
-            const bodyRows = table.querySelectorAll('tbody tr');
-            
-            headerCells.forEach(th => {
-                const columnId = th.dataset.columnId;
-                if (!visibleColumns[columnId]) {
-                    th.classList.add('hidden-column');
-                } else {
-                    th.classList.remove('hidden-column');
-                }
+            data.sort((a, b) => {
+                const dateTimeA = getCombinedDateTime(a);
+                const dateTimeB = getCombinedDateTime(b);
+                if (!dateTimeA && !dateTimeB) return 0;
+                if (!dateTimeA) return 1;
+                if (!dateTimeB) return -1;
+                return dateTimeB.getTime() - dateTimeA.getTime();
             });
 
-            bodyRows.forEach(row => {
-                const cells = row.querySelectorAll('td');
-                cells.forEach(cell => {
-                    const columnId = cell.dataset.columnId;
-                    if (!visibleColumns[columnId]) {
-                        cell.classList.add('hidden-column');
+            // --- BẮT ĐẦU THAY ĐỔI: Loại bỏ cột 'ngay_nhan' ---
+            const columns = [
+                'order_kd', 'ten_chi_tiet', 'sll', 'tinh_chat', 'so_file', 'sl_giao', 
+                'ngay_giao', 'gio_giao', 'code', 'ho_va_ten', 'trang_thai_giao'
+            ];
+            const columnHeaders = {
+                'order_kd': 'Order KD', 'ten_chi_tiet': 'Tên Chi Tiết', 'sll': 'SL',
+                'tinh_chat': 'Tính Chất', 'so_file': 'Số File', 'sl_giao': 'SL Giao',
+                'ngay_giao': 'Ngày Giao', 'gio_giao': 'Giờ Giao',
+                'code': 'Mã Code', 'ho_va_ten': 'Họ và Tên', 'trang_thai_giao': 'Trạng Thái'
+            };
+            // --- KẾT THÚC THAY ĐỔI ---
+            
+            let table = `<table id="resultsTable"><thead><tr>`;
+            columns.forEach(col => table += `<th>${columnHeaders[col] || col}</th>`);
+            table += '</tr></thead><tbody>';
+            data.forEach(row => {
+                table += '<tr>';
+                columns.forEach(col => {
+                    const cellValue = row[col] || '';
+                    let cellHtml;
+                    if (col === 'trang_thai_giao') {
+                        const status = cellValue.trim();
+                        if (status === 'Đã nhận') cellHtml = `<span class="status-badge status-da-nhan">${status}</span>`;
+                        else if (status === 'Đã giao') cellHtml = `<span class="status-badge status-da-giao">${status}</span>`;
+                        else cellHtml = status;
+                    // Cập nhật điều kiện chỉ còn 'ngay_giao'
+                    } else if (col === 'ngay_giao' && cellValue) {
+                        const date = new Date(cellValue);
+                        cellHtml = !isNaN(date.getTime()) ? date.toLocaleDateString('vi-VN') : cellValue;
                     } else {
-                        cell.classList.remove('hidden-column');
+                        cellHtml = cellValue;
                     }
+                    table += `<td>${cellHtml}</td>`;
                 });
+                table += '</tr>';
             });
+            table += '</tbody></table>';
+            dataDiv.innerHTML = table;
         }
 
-        document.getElementById('searchText').addEventListener('input', function() {
-            if (allData.length > 0) {
-                applyFiltersAndSort();
-                displayData();
-            }
-        });
-        
-        window.addEventListener('load', function() {
-            initializeColumnVisibility();
-            setTimeout(fetchData, 1000);
-            addDragAndDropListeners();
-        });
+        function exportTableToExcel(tableID, filename = '') {
+            const table = document.getElementById(tableID);
+            if (!table) return alert('Không có dữ liệu để xuất!');
+            const wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
+            XLSX.writeFile(wb, filename);
+        }
     </script>
+
 </body>
 </html>
