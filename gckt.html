@@ -140,6 +140,15 @@
         }
         .status-da-nhan { background-color: #fee2e2; color: #b91c1c; } /* Đỏ */
         .status-da-giao { background-color: #dcfce7; color: #166534; } /* Xanh */
+        
+        /* --- BẮT ĐẦU THAY ĐỔI: CSS cho bộ đếm dòng --- */
+        .row-count-info {
+            margin: -15px 0 15px 5px;
+            color: #5a6268;
+            font-style: italic;
+            font-size: 14px;
+        }
+        /* --- KẾT THÚC THAY ĐỔI --- */
     </style>
 </head>
 <body>
@@ -165,6 +174,10 @@
                 <button id="exportButton" disabled>Xuất ra Excel</button>
             </div>
         </div>
+        
+        <!-- --- BẮT ĐẦU THAY ĐỔI: Thêm phần tử hiển thị số dòng --- -->
+        <div id="rowCountInfo" class="row-count-info"></div>
+        <!-- --- KẾT THÚC THAY ĐỔI --- -->
 
         <div class="table-container" id="dataTable">
              <p>Đang kết nối đến AppSheet API, vui lòng chờ...</p>
@@ -255,10 +268,16 @@
 
         function displayData(data) {
             const dataDiv = document.getElementById('dataTable');
+            // --- BẮT ĐẦU THAY ĐỔI: Cập nhật bộ đếm dòng ---
+            const rowCountInfo = document.getElementById('rowCountInfo');
             if (!data || data.length === 0) {
                 dataDiv.innerHTML = '<p>Không có dữ liệu phù hợp với bộ lọc của bạn.</p>';
+                rowCountInfo.textContent = 'Tìm thấy 0 kết quả.';
                 return;
             }
+            rowCountInfo.textContent = `Hiển thị ${data.length} kết quả.`;
+            // --- KẾT THÚC THAY ĐỔI ---
+            
             data.sort((a, b) => {
                 const dateTimeA = getCombinedDateTime(a);
                 const dateTimeB = getCombinedDateTime(b);
@@ -268,7 +287,6 @@
                 return dateTimeB.getTime() - dateTimeA.getTime();
             });
 
-            // --- BẮT ĐẦU THAY ĐỔI: Loại bỏ cột 'ngay_nhan' ---
             const columns = [
                 'order_kd', 'ten_chi_tiet', 'sll', 'tinh_chat', 'so_file', 'sl_giao', 
                 'ngay_giao', 'gio_giao', 'code', 'ho_va_ten', 'trang_thai_giao'
@@ -277,9 +295,8 @@
                 'order_kd': 'Order KD', 'ten_chi_tiet': 'Tên Chi Tiết', 'sll': 'SL',
                 'tinh_chat': 'Tính Chất', 'so_file': 'Số File', 'sl_giao': 'SL Giao',
                 'ngay_giao': 'Ngày Giao', 'gio_giao': 'Giờ Giao',
-                'code': 'Code', 'ho_va_ten': 'Họ và Tên', 'trang_thai_giao': 'Trạng Thái'
+                'code': 'Mã Code', 'ho_va_ten': 'Họ và Tên', 'trang_thai_giao': 'Trạng Thái'
             };
-            // --- KẾT THÚC THAY ĐỔI ---
             
             let table = `<table id="resultsTable"><thead><tr>`;
             columns.forEach(col => table += `<th>${columnHeaders[col] || col}</th>`);
@@ -294,7 +311,6 @@
                         if (status === 'Đã nhận') cellHtml = `<span class="status-badge status-da-nhan">${status}</span>`;
                         else if (status === 'Đã giao') cellHtml = `<span class="status-badge status-da-giao">${status}</span>`;
                         else cellHtml = status;
-                    // Cập nhật điều kiện chỉ còn 'ngay_giao'
                     } else if (col === 'ngay_giao' && cellValue) {
                         const date = new Date(cellValue);
                         cellHtml = !isNaN(date.getTime()) ? date.toLocaleDateString('vi-VN') : cellValue;
