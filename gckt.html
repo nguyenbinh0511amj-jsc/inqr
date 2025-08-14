@@ -70,6 +70,7 @@
             border-radius: 5px;
             font-size: 14px;
             transition: border-color 0.2s, box-shadow 0.2s;
+            box-sizing: border-box; /* Thêm để padding không làm tăng kích thước */
         }
         .input-group input:focus {
             outline: none;
@@ -141,14 +142,49 @@
         .status-da-nhan { background-color: #fee2e2; color: #b91c1c; } /* Đỏ */
         .status-da-giao { background-color: #dcfce7; color: #166534; } /* Xanh */
         
-        /* --- BẮT ĐẦU THAY ĐỔI: CSS cho bộ đếm dòng --- */
         .row-count-info {
             margin: -15px 0 15px 5px;
             color: #5a6268;
             font-style: italic;
             font-size: 14px;
         }
-        /* --- KẾT THÚC THAY ĐỔI --- */
+        
+        /* --- BẮT ĐẦU TỐI ƯU HÓA CHO MOBILE --- */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px; /* Giảm padding của body trên mobile */
+            }
+
+            .container {
+                padding: 15px; /* Giảm padding của container chính */
+            }
+
+            h1 {
+                font-size: 20px; /* Giảm kích thước tiêu đề chính */
+            }
+
+            .toolbar {
+                flex-direction: column; /* Xếp chồng các nhóm filter và action */
+                align-items: stretch;   /* Kéo dài các nhóm để chiếm toàn bộ chiều rộng */
+                gap: 20px;
+            }
+
+            .toolbar .filters, .toolbar .actions {
+                flex-direction: column; /* Xếp chồng các mục bên trong mỗi nhóm */
+                width: 100%;
+                gap: 12px;
+            }
+            
+            .input-group, .input-group input, button {
+                width: 100%; /* Cho các input và button chiếm toàn bộ chiều rộng */
+            }
+
+            .input-group input {
+                /* Đảm bảo padding không phá vỡ layout width 100% */
+                box-sizing: border-box; 
+            }
+        }
+        /* --- KẾT THÚC TỐI ƯU HÓA CHO MOBILE --- */
     </style>
 </head>
 <body>
@@ -175,9 +211,7 @@
             </div>
         </div>
         
-        <!-- --- BẮT ĐẦU THAY ĐỔI: Thêm phần tử hiển thị số dòng --- -->
         <div id="rowCountInfo" class="row-count-info"></div>
-        <!-- --- KẾT THÚC THAY ĐỔI --- -->
 
         <div class="table-container" id="dataTable">
              <p>Đang kết nối đến AppSheet API, vui lòng chờ...</p>
@@ -268,7 +302,6 @@
 
         function displayData(data) {
             const dataDiv = document.getElementById('dataTable');
-            // --- BẮT ĐẦU THAY ĐỔI: Cập nhật bộ đếm dòng ---
             const rowCountInfo = document.getElementById('rowCountInfo');
             if (!data || data.length === 0) {
                 dataDiv.innerHTML = '<p>Không có dữ liệu phù hợp với bộ lọc của bạn.</p>';
@@ -276,7 +309,6 @@
                 return;
             }
             rowCountInfo.textContent = `Hiển thị ${data.length} kết quả.`;
-            // --- KẾT THÚC THAY ĐỔI ---
             
             data.sort((a, b) => {
                 const dateTimeA = getCombinedDateTime(a);
