@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Xuất Excel - Kiểm kê đơn hàng</title>
+    <title>Kiểm Kê Đơn Hàng</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdL5b8719875F07+vL49R462Q519hL31v2R2Ff8e0Q5Fp0B+p0Qv6j+Q/Q0C6G51R7G0F61O+q5Fp0B+p0Q==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
+        /* Thiết lập chung */
         * {
             margin: 0;
             padding: 0;
@@ -13,50 +15,53 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Poppins', sans-serif; /* Font hiện đại hơn */
+            background-color: #f4f7fa; /* Nền sáng, nhẹ nhàng */
             min-height: 100vh;
-            padding: 20px;
+            padding: 40px 20px;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1500px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); /* Đổ bóng nhẹ */
             overflow: hidden;
-            backdrop-filter: blur(10px);
         }
 
+        /* Header */
         .header {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            background-color: #2c3e50; /* Màu tối, sang trọng */
             padding: 30px;
             text-align: center;
             color: white;
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
         }
 
         .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            font-size: 2.2rem;
+            margin-bottom: 5px;
+            font-weight: 700;
         }
 
         .header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
+            font-size: 1rem;
+            opacity: 0.8;
         }
 
+        /* Controls và Filters */
         .controls {
-            padding: 30px;
-            background: linear-gradient(135deg, #f6f9fc 0%, #ffffff 100%);
-            border-bottom: 1px solid #e1e8ed;
+            padding: 25px 30px;
+            background-color: #ffffff;
+            border-bottom: 1px solid #e5e9ec;
         }
 
         .filter-group {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
             margin-bottom: 25px;
         }
 
@@ -67,25 +72,33 @@
 
         .form-group label {
             font-weight: 600;
-            color: #2c3e50;
+            color: #4a5568;
             margin-bottom: 8px;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .form-group label i {
+            margin-right: 8px;
+            color: #3498db;
         }
 
         .form-group input, .form-group select {
-            padding: 12px 16px;
-            border: 2px solid #e1e8ed;
-            border-radius: 10px;
+            padding: 10px 15px;
+            border: 1px solid #dcdfe4;
+            border-radius: 8px;
             font-size: 1rem;
             transition: all 0.3s ease;
-            background: white;
+            background: #f7f9fb;
+            color: #2c3e50;
         }
 
         .form-group input:focus, .form-group select:focus {
             outline: none;
-            border-color: #4facfe;
-            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
-            transform: translateY(-2px);
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+            background: white;
         }
 
         .search-container {
@@ -95,27 +108,27 @@
 
         .search-input {
             width: 100%;
-            padding: 15px 50px 15px 20px;
-            border: 2px solid #e1e8ed;
+            padding: 12px 20px 12px 50px; /* Thêm padding bên trái cho icon */
+            border: 1px solid #dcdfe4;
             border-radius: 50px;
-            font-size: 1.1rem;
+            font-size: 1rem;
             transition: all 0.3s ease;
-            background: white;
+            background: #f7f9fb;
         }
 
         .search-input:focus {
             outline: none;
-            border-color: #4facfe;
-            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
         }
 
         .search-icon {
             position: absolute;
-            right: 20px;
+            left: 20px; /* Di chuyển icon sang trái */
             top: 50%;
             transform: translateY(-50%);
-            color: #64748b;
-            font-size: 1.2rem;
+            color: #95a5a6;
+            font-size: 1rem;
         }
 
         .button-group {
@@ -125,194 +138,186 @@
         }
 
         .btn {
-            padding: 12px 30px;
+            padding: 10px 25px;
             border: none;
             border-radius: 50px;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-color: #3498db; /* Xanh dương */
             color: white;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
 
         .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(52, 152, 219, 0.3);
         }
 
         .btn-success {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            background-color: #2ecc71; /* Xanh lá */
             color: white;
-            box-shadow: 0 4px 15px rgba(17, 153, 142, 0.4);
         }
 
         .btn-success:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(17, 153, 142, 0.6);
+            background-color: #27ae60;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(46, 204, 113, 0.3);
         }
 
         .btn-warning {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background-color: #f39c12; /* Vàng cam */
             color: white;
-            box-shadow: 0 4px 15px rgba(240, 147, 251, 0.4);
         }
 
         .btn-warning:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(240, 147, 251, 0.6);
+            background-color: #e67e22;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(243, 156, 18, 0.3);
         }
 
+        /* Content và Status */
         .content {
             padding: 30px;
         }
 
         .status {
-            padding: 15px 25px;
+            padding: 15px 20px;
             margin-bottom: 20px;
-            border-radius: 10px;
+            border-radius: 8px;
             font-weight: 500;
             display: none;
+            border-left: 5px solid; /* Điểm nhấn trạng thái */
         }
 
         .status.loading {
-            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
-            color: #8b4513;
-            display: block;
+            background-color: #ecf0f1;
+            color: #34495e;
+            border-color: #95a5a6;
+            display: flex;
+            align-items: center;
         }
 
         .status.success {
-            background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
-            color: #2d5016;
+            background-color: #e8f9f2;
+            color: #27ae60;
+            border-color: #2ecc71;
             display: block;
         }
 
         .status.error {
-            background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
-            color: #8b0000;
+            background-color: #fde8e8;
+            color: #c0392b;
+            border-color: #e74c3c;
             display: block;
-            max-height: 400px;
+            max-height: 450px;
             overflow-y: auto;
         }
 
         .status.error h3 {
             margin-bottom: 10px;
-            color: #d32f2f;
+            color: #e74c3c;
+            font-size: 1.2rem;
         }
-
-        .status.error h4 {
-            margin: 15px 0 10px 0;
-            color: #d32f2f;
-        }
-
-        .status.error ol {
+        
+        /* Cải tiến hiển thị lỗi */
+        .status.error ol, .status.error ul {
             margin: 10px 0 10px 20px;
+            padding-left: 0;
+            list-style-type: disc;
         }
 
         .status.error li {
             margin-bottom: 8px;
-            line-height: 1.5;
+            line-height: 1.4;
+            font-size: 0.95rem;
         }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        
+        .status.error a {
+            color: #2980b9;
+            text-decoration: none;
         }
-
-        .data-table th {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
-            padding: 15px 12px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            border-bottom: 2px solid #0288d1;
-            white-space: nowrap;
+        
+        .status.error a:hover {
+            text-decoration: underline;
         }
-
-        .data-table th:hover {
-            background: linear-gradient(135deg, #2196f3 0%, #03a9f4 100%);
-            transform: translateY(-1px);
-            transition: all 0.3s ease;
-        }
-
-        .data-table td {
-            padding: 12px;
-            border-bottom: 1px solid #f1f5f9;
-            font-size: 0.9rem;
-            vertical-align: top;
-        }
-
-        .data-table tr:hover {
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-        }
-
-        .highlight {
-            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        
+        .status.error code {
+            background-color: #f7f9fb;
             padding: 2px 4px;
             border-radius: 4px;
-            font-weight: 600;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #e74c3c;
         }
 
+
+        /* Thống kê */
         .stats {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
 
         .stat-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: #ffffff;
+            color: #2c3e50;
             padding: 25px;
-            border-radius: 15px;
-            text-align: center;
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-            transform: translateY(0);
+            border-radius: 12px;
+            text-align: left;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            border-left: 5px solid #3498db; /* Điểm nhấn màu xanh */
             transition: all 0.3s ease;
         }
 
+        /* THAY ĐỔI CSS Ở ĐÂY: Thêm 1 thẻ stat-card nữa */
+        .stat-card:nth-child(2) { border-left-color: #2ecc71; } /* Xanh lá */
+        .stat-card:nth-child(3) { border-left-color: #f39c12; } /* Vàng cam (Cho Tổng SLL) */
+        .stat-card:nth-child(4) { border-left-color: #e74c3c; } /* Đỏ (Cho Vị trí khác nhau) */
+
+
         .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
         }
 
         .stat-number {
-            font-size: 2.5rem;
+            font-size: 2.2rem;
             font-weight: 700;
             margin-bottom: 5px;
+            color: #3498db; /* Màu nổi bật */
         }
+        
+        .stat-card:nth-child(2) .stat-number { color: #2ecc71; }
+        .stat-card:nth-child(3) .stat-number { color: #f39c12; } /* Màu cho Tổng SLL */
+        .stat-card:nth-child(4) .stat-number { color: #e74c3c; } /* Màu cho Vị trí khác nhau */
+
 
         .stat-label {
-            font-size: 1rem;
-            opacity: 0.9;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-
+        
         .loading-spinner {
             display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #4facfe;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            border-top: 2px solid #3498db;
             border-radius: 50%;
             animation: spin 1s linear infinite;
+            margin-right: 8px;
         }
 
         @keyframes spin {
@@ -320,68 +325,132 @@
             100% { transform: rotate(360deg); }
         }
 
+
+        /* Bảng Dữ liệu */
         .table-container {
             max-height: 600px;
             overflow-y: auto;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e9ec;
         }
 
-        .table-container::-webkit-scrollbar {
-            width: 8px;
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
         }
 
-        .table-container::-webkit-scrollbar-track {
-            background: #f1f5f9;
+        .data-table th {
+            background-color: #34495e; /* Màu nền header tối */
+            color: white;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 3px solid #3498db;
+            white-space: nowrap;
         }
 
-        .table-container::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid #ecf0f1;
+            font-size: 0.9rem;
+            vertical-align: middle;
+            color: #34495e;
+        }
+
+        .data-table tr:hover {
+            background-color: #fcfdfe; /* Hiệu ứng hover nhẹ */
+        }
+
+        .highlight {
+            background-color: #fcf3cf; /* Màu vàng nhạt */
+            color: #8b600a;
+            padding: 2px 4px;
             border-radius: 4px;
+            font-weight: 600;
         }
+        
+        /* CSS BỔ SUNG CHO CỘT TRẠNG THÁI */
+        .status-cell {
+            text-align: center;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .da-kiem-ke {
+            background-color: #e8f9f2; /* Màu nền xanh lá nhạt */
+            color: #27ae60; /* Màu chữ xanh lá đậm */
+        }
+        /* KẾT THÚC CSS BỔ SUNG */
 
-        @media (max-width: 768px) {
-            .header h1 {
-                font-size: 2rem;
-            }
-            
+
+        /* Responsive */
+        @media (max-width: 992px) {
             .filter-group {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             }
-            
+            .stats {
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Điều chỉnh lại grid cho stats */
+            }
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 20px 10px;
+            }
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            .controls, .content {
+                padding: 15px;
+            }
             .button-group {
                 justify-content: center;
             }
-            
-            .data-table {
-                font-size: 0.8rem;
+            .btn {
+                width: 100%;
+                margin-bottom: 10px;
             }
-            
             .data-table th, .data-table td {
-                padding: 8px 6px;
+                padding: 10px 8px;
+                font-size: 0.85rem;
             }
         }
+        
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 Xuất Excel - Kiểm kê đơn hàng</h1>
-            <p>Quản lý và xuất dữ liệu từ Google Sheets</p>
+            <h1><i class="fas fa-warehouse"></i>Kiểm Kê Đơn Hàng</h1>
+            <p>Quản lý, tìm kiếm và xuất dữ liệu kiểm kê từ AppSheet</p>
         </div>
 
         <div class="controls">
             <div class="filter-group">
                 <div class="form-group">
-                    <label for="fromDate">📅 Từ ngày:</label>
+                    <label for="fromDate"><i class="fas fa-calendar-alt"></i> Từ ngày:</label>
                     <input type="date" id="fromDate">
                 </div>
                 <div class="form-group">
-                    <label for="toDate">📅 Đến ngày:</label>
+                    <label for="toDate"><i class="fas fa-calendar-alt"></i> Đến ngày:</label>
                     <input type="date" id="toDate">
                 </div>
                 <div class="form-group">
-                    <label for="positionFilter">📍 Vị trí:</label>
+                    <label for="positionFilter"><i class="fas fa-map-marker-alt"></i> Vị trí:</label>
                     <select id="positionFilter">
                         <option value="">-- Tất cả vị trí --</option>
                     </select>
@@ -389,19 +458,19 @@
             </div>
 
             <div class="search-container">
-                <input type="text" id="searchInput" class="search-input" placeholder="🔍 Tìm kiếm nội dung...">
-                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" class="search-input" placeholder="Tìm kiếm Order KD, Tên chi tiết, QR code...">
+                <span class="search-icon"><i class="fas fa-search"></i></span>
             </div>
 
             <div class="button-group">
                 <button class="btn btn-primary" onclick="loadData()">
-                    <span id="loadText">📥 Tải dữ liệu</span>
+                    <span id="loadText"><i class="fas fa-download"></i> Tải dữ liệu</span>
                 </button>
                 <button class="btn btn-success" onclick="exportToExcel()">
-                    📤 Xuất Excel
+                    <i class="fas fa-file-excel"></i> Xuất Excel
                 </button>
                 <button class="btn btn-warning" onclick="clearFilters()">
-                    🔄 Xóa bộ lọc
+                    <i class="fas fa-sync-alt"></i> Xóa bộ lọc
                 </button>
             </div>
         </div>
@@ -411,16 +480,20 @@
             
             <div class="stats" id="stats" style="display: none;">
                 <div class="stat-card">
+                    <div class="stat-label">Tổng số đơn hàng</div>
                     <div class="stat-number" id="totalRecords">0</div>
-                    <div class="stat-label">Tổng số bản ghi</div>
                 </div>
                 <div class="stat-card">
+                    <div class="stat-label">Tổng số đơn hàng theo khu vực</div>
                     <div class="stat-number" id="filteredRecords">0</div>
-                    <div class="stat-label">Bản ghi hiển thị</div>
                 </div>
                 <div class="stat-card">
+                    <div class="stat-label">Tổng số lượng</div>
+                    <div class="stat-number" id="totalSLL">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Khu vực kiểm kê</div>
                     <div class="stat-number" id="uniquePositions">0</div>
-                    <div class="stat-label">Vị trí khác nhau</div>
                 </div>
             </div>
 
@@ -428,21 +501,21 @@
                 <table class="data-table" id="dataTable" style="display: none;">
                     <thead>
                         <tr>
-                            <th>📋 Order KD</th>
-                            <th>🔖 Tên chi tiết</th>
-                            <th>📁 Số file</th>
-                            <th>📊 SLL</th>
-                            <th>🏷️ QR code</th>
-                            <th>📍 Vị trí</th>
-                            <th>📝 SL kiểm đếm</th>
-                            <th>📦 Từ thùng</th>
-                            <th>📦 Đến thùng</th>
-                            <th>✅ Check QR</th>
-                            <th>💬 Ghi chú</th>
-                            <th>🔢 Code</th>
-                            <th>👤 Họ và tên</th>
-                            <th>📅 Ngày nhập</th>
-                            <th>🔄 Trạng thái</th>
+                            <th><i class="fas fa-clipboard-list"></i> Order KD</th>
+                            <th><i class="fas fa-tag"></i> Tên chi tiết</th>
+                            <th><i class="fas fa-file-alt"></i> Số file</th>
+                            <th><i class="fas fa-sort-numeric-up"></i> SLL</th>
+                            <th><i class="fas fa-qrcode"></i> QR code</th>
+                            <th><i class="fas fa-map-pin"></i> Vị trí</th>
+                            <th><i class="fas fa-check-double"></i> SL kiểm đếm</th>
+                            <th><i class="fas fa-box-open"></i> Từ thùng</th>
+                            <th><i class="fas fa-box"></i> Đến thùng</th>
+                            <th><i class="fas fa-qrcode"></i> Check QR</th>
+                            <th><i class="fas fa-comment-dots"></i> Ghi chú</th>
+                            <th><i class="fas fa-code"></i> Code</th>
+                            <th><i class="fas fa-user-circle"></i> Họ và tên</th>
+                            <th><i class="fas fa-calendar-check"></i> Ngày nhập</th>
+                            <th><i class="fas fa-hourglass-half"></i> Trạng thái</th>
                         </tr>
                     </thead>
                     <tbody id="dataBody">
@@ -453,6 +526,8 @@
     </div>
 
     <script>
+        // --- GIỮ NGUYÊN BLOCK SCRIPT (bao gồm cả các biến và hàm) ĐỂ ĐẢM BẢO CHỨC NĂNG ---
+
         const SHEET_ID = '1uWHw7ME46tF5bkB0vrUM-Ubi982k4l3sHuqYcy3dFF4';
         const API_KEY = 'AIzaSyCrC_DfD_DrpjzjO5ENvqTMHBA4FIDBiP0';
         const RANGE = 'Nhập đơn hàng kiểm kê!A:O'; // Từ cột A đến O (15 cột)
@@ -472,21 +547,26 @@
         // Hiển thị trạng thái
         function showStatus(message, type) {
             const status = document.getElementById('status');
-            status.textContent = message;
+            // Thêm spinner cho trạng thái loading
+            if (type === 'loading') {
+                status.innerHTML = `<span class="loading-spinner"></span> ${message}`;
+            } else {
+                status.textContent = message;
+            }
             status.className = `status ${type}`;
         }
 
-        // Tải dữ liệu từ Google Sheets API
+        // Tải dữ liệu từ AppSheet API
         async function loadData() {
             const loadButton = document.querySelector('.btn-primary');
             const loadText = document.getElementById('loadText');
             
             loadButton.disabled = true;
             loadText.innerHTML = '<span class="loading-spinner"></span> Đang tải...';
-            showStatus('Đang kết nối Google Sheets API...', 'loading');
+            showStatus('Đang kết nối AppSheet API...', 'loading');
 
             try {
-                // Chỉ sử dụng Google Sheets API
+                // Chỉ sử dụng AppSheet API
                 const data = await fetchGoogleSheetsData();
                 
                 if (!data || !data.values || data.values.length === 0) {
@@ -495,7 +575,7 @@
 
                 // Kiểm tra header
                 const headers = data.values[0];
-                console.log('Headers từ Google Sheets:', headers);
+                console.log('Headers từ AppSheet:', headers);
 
                 // Bỏ qua hàng đầu tiên (header) và xử lý dữ liệu
                 const rows = data.values.slice(1);
@@ -532,7 +612,7 @@
 
                 populatePositionFilter();
                 applyFilters();
-                showStatus(`✅ Đã tải thành công ${allData.length} bản ghi từ Google Sheets!`, 'success');
+                showStatus(`✅ Đã tải thành công ${allData.length} bản ghi từ AppSheet!`, 'success');
                 
                 // Hiển thị bảng và thống kê
                 document.getElementById('dataTable').style.display = 'table';
@@ -543,11 +623,11 @@
                 showGoogleSheetsError(error);
             } finally {
                 loadButton.disabled = false;
-                loadText.innerHTML = '📥 Tải dữ liệu';
+                loadText.innerHTML = '<i class="fas fa-download"></i> Tải dữ liệu';
             }
         }
 
-        // Fetch dữ liệu từ Google Sheets API
+        // Fetch dữ liệu từ AppSheet API
         async function fetchGoogleSheetsData() {
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${RANGE}?key=${API_KEY}`;
             
@@ -562,7 +642,7 @@
             });
 
             console.log('Response status:', response.status);
-            console.log('Response headers:', [...response.headers.entries()]);
+            // console.log('Response headers:', [...response.headers.entries()]); // Bỏ qua log này nếu quá dài
 
             if (!response.ok) {
                 const errorBody = await response.text();
@@ -590,38 +670,38 @@
             return data;
         }
 
-        // Hiển thị lỗi Google Sheets với hướng dẫn chi tiết
+        // Hiển thị lỗi AppSheet với hướng dẫn chi tiết
         function showGoogleSheetsError(error) {
             const status = document.getElementById('status');
             
             let errorHTML = `
                 <div style="text-align: left;">
-                    <h3>⚠️ Không thể kết nối Google Sheets</h3>
+                    <h3><i class="fas fa-exclamation-triangle"></i> Lỗi Kết Nối AppSheet</h3>
                     <p><strong>Lỗi:</strong> ${error.message}</p>
                     <br>
             `;
 
             if (error.message.includes('403')) {
                 errorHTML += `
-                    <h4>🔧 Khắc phục lỗi 403 (Forbidden):</h4>
+                    <h4><i class="fas fa-tools"></i> Khắc phục lỗi 403 (Forbidden):</h4>
                     <ol>
                         <li><strong>Kiểm tra API Key:</strong>
                             <ul>
                                 <li>Truy cập <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a></li>
-                                <li>Đảm bảo API key: <code>${API_KEY}</code> còn hiệu lực</li>
+                                <li>Đảm bảo API key: <code>${API_KEY.substring(0, 10)}...</code> còn hiệu lực</li>
                                 <li>Kiểm tra quota và usage limits</li>
                             </ul>
                         </li>
-                        <li><strong>Bật Google Sheets API:</strong>
+                        <li><strong>Bật AppSheet API:</strong>
                             <ul>
-                                <li>Trong Google Cloud Console, bật "Google Sheets API"</li>
+                                <li>Trong Google Cloud Console, tìm và bật "AppSheet API"</li>
                                 <li>Đảm bảo project đã được billing enabled (nếu cần)</li>
                             </ul>
                         </li>
                         <li><strong>Kiểm tra quyền truy cập Sheet:</strong>
                             <ul>
                                 <li>Mở Google Sheet: <a href="https://docs.google.com/spreadsheets/d/${SHEET_ID}" target="_blank">Mở Sheet</a></li>
-                                <li>Nhấn "Share" → "Anyone with the link can view"</li>
+                                <li>Nhấn "Share" và đặt quyền là "Anyone with the link can view" (Công khai)</li>
                                 <li>Hoặc thêm service account email vào sheet</li>
                             </ul>
                         </li>
@@ -629,43 +709,46 @@
                 `;
             } else if (error.message.includes('404')) {
                 errorHTML += `
-                    <h4>🔧 Khắc phục lỗi 404 (Not Found):</h4>
+                    <h4><i class="fas fa-tools"></i> Khắc phục lỗi 404 (Not Found):</h4>
                     <ol>
                         <li><strong>Kiểm tra Sheet ID:</strong> <code>${SHEET_ID}</code></li>
                         <li><strong>Kiểm tra tên Sheet:</strong> Đảm bảo có sheet tên "Nhập đơn hàng kiểm kê"</li>
-                        <li><strong>Kiểm tra quyền truy cập:</strong> Sheet có thể đã bị xóa hoặc không public</li>
+                        <li><strong>Kiểm tra quyền truy cập:</strong> Sheet có thể đã bị xóa hoặc chưa được public</li>
                     </ol>
                 `;
             } else {
                 errorHTML += `
-                    <h4>🔧 Các bước kiểm tra:</h4>
+                    <h4><i class="fas fa-tools"></i> Các bước kiểm tra chung:</h4>
                     <ol>
                         <li>Kiểm tra kết nối internet</li>
                         <li>Thử refresh trang và load lại</li>
-                        <li>Kiểm tra browser console để xem lỗi chi tiết</li>
-                        <li>Đảm bảo CORS được cấu hình đúng</li>
+                        <li>Kiểm tra browser console (F12) để xem lỗi chi tiết</li>
+                        <li>Đảm bảo CORS được cấu hình đúng (nếu đây là ứng dụng server)</li>
                     </ol>
                 `;
             }
 
             errorHTML += `
                     <br>
-                    <h4>📋 Thông tin kết nối hiện tại:</h4>
+                    <h4><i class="fas fa-info-circle"></i> Thông tin kết nối hiện tại:</h4>
                     <ul>
                         <li><strong>Sheet ID:</strong> <code>${SHEET_ID}</code></li>
-                        <li><strong>API Key:</strong> <code>${API_KEY.substring(0, 20)}...</code></li>
                         <li><strong>Range:</strong> <code>${RANGE}</code></li>
                         <li><strong>URL API:</strong> <a href="https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${RANGE}?key=${API_KEY}" target="_blank">Test trong browser</a></li>
                     </ul>
                     <br>
                     <div style="background: #fff3cd; padding: 10px; border-radius: 5px; border-left: 4px solid #ffc107;">
-                        <strong>💡 Gợi ý:</strong> Nhấn vào link "Test trong browser" ở trên để kiểm tra trực tiếp API response
+                        <strong>💡 Gợi ý:</strong> Nhấn vào link "Test trong browser" ở trên để kiểm tra trực tiếp API response và thông báo lỗi của Google.
                     </div>
                 </div>
             `;
 
             status.innerHTML = errorHTML;
             status.className = 'status error';
+            
+            // Ẩn bảng và thống kê khi có lỗi
+            document.getElementById('dataTable').style.display = 'none';
+            document.getElementById('stats').style.display = 'none';
         }
 
         // Điền dữ liệu vào dropdown vị trí
@@ -698,13 +781,16 @@
                 if (fromDate && item.ngayNhap) {
                     const itemDate = new Date(item.ngayNhap);
                     const filterFromDate = new Date(fromDate);
-                    if (itemDate < filterFromDate) return false;
+                    // Đảm bảo không lọc các ngày không hợp lệ
+                    if (!isNaN(itemDate) && itemDate < filterFromDate) return false;
                 }
                 
                 if (toDate && item.ngayNhap) {
                     const itemDate = new Date(item.ngayNhap);
                     const filterToDate = new Date(toDate);
-                    if (itemDate > filterToDate) return false;
+                    // Chỉnh ngày lọc đến ngày cuối để bao gồm cả ngày đó
+                    filterToDate.setDate(filterToDate.getDate() + 1); 
+                    if (!isNaN(itemDate) && itemDate >= filterToDate) return false;
                 }
 
                 // Lọc theo vị trí
@@ -723,7 +809,7 @@
             updateStats();
         }
 
-        // Hiển thị dữ liệu trong bảng
+        // Hiển thị dữ liệu trong bảng (ĐÃ CHỈNH SỬA)
         function displayData() {
             const tbody = document.getElementById('dataBody');
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
@@ -739,7 +825,7 @@
                     item.ghiChu, item.code, item.hoVaTen, item.ngayNhap, item.trangThai
                 ];
 
-                cells.forEach(cellValue => {
+                cells.forEach((cellValue, index) => {
                     const cell = document.createElement('td');
                     
                     if (searchTerm && cellValue.toLowerCase().includes(searchTerm)) {
@@ -747,6 +833,19 @@
                     } else {
                         cell.textContent = cellValue;
                     }
+                    
+                    // XỬ LÝ ĐỊNH DẠNG CỘT TRẠNG THÁI (index 14)
+                    if (index === 14) {
+                        cell.classList.add('status-cell');
+                        if (cellValue.trim().toLowerCase() === 'đã kiểm kê') {
+                            // Thay thế nội dung bằng một thẻ badge có class màu xanh
+                            cell.innerHTML = `<span class="status-badge da-kiem-ke">${cellValue}</span>`;
+                        } else {
+                            // Nếu có các trạng thái khác, có thể thêm class khác ở đây
+                            cell.textContent = cellValue;
+                        }
+                    }
+                    // KẾT THÚC XỬ LÝ ĐỊNH DẠNG CỘT TRẠNG THÁI
                     
                     row.appendChild(cell);
                 });
@@ -757,14 +856,26 @@
 
         // Highlight text tìm kiếm
         function highlightText(text, searchTerm) {
-            const regex = new RegExp(`(${searchTerm})`, 'gi');
+            // Escape special characters in the search term for regex
+            const escapedSearchTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`(${escapedSearchTerm})`, 'gi');
             return text.replace(regex, '<span class="highlight">$1</span>');
         }
 
-        // Cập nhật thống kê
+        // Cập nhật thống kê (ĐÃ BỔ SUNG TÍNH TỔNG SLL)
         function updateStats() {
             document.getElementById('totalRecords').textContent = allData.length;
             document.getElementById('filteredRecords').textContent = filteredData.length;
+
+            // Tính Tổng SLL từ dữ liệu đã lọc (BỔ SUNG)
+            const totalSLL = filteredData.reduce((sum, item) => {
+                // Đảm bảo item.sll là một số hợp lệ trước khi cộng
+                const sllValue = parseInt(item.sll);
+                return sum + (isNaN(sllValue) ? 0 : sllValue);
+            }, 0);
+
+            // Hiển thị Tổng SLL đã tính (BỔ SUNG)
+            document.getElementById('totalSLL').textContent = totalSLL.toLocaleString('en-US'); 
             
             const uniquePositions = new Set(filteredData.map(item => item.viTri).filter(pos => pos));
             document.getElementById('uniquePositions').textContent = uniquePositions.size;
@@ -803,7 +914,11 @@
                 const ws = XLSX.utils.aoa_to_sheet(wsData);
                 
                 // Thiết lập độ rộng cột
-                const colWidths = headers.map(() => ({ wch: 15 }));
+                const colWidths = [
+                    { wch: 12 }, { wch: 30 }, { wch: 15 }, { wch: 10 }, { wch: 25 }, 
+                    { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, 
+                    { wch: 20 }, { wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 15 }
+                ];
                 ws['!cols'] = colWidths;
 
                 // Thêm worksheet vào workbook
@@ -829,7 +944,7 @@
             const toDate = document.getElementById('toDate').value;
             const position = document.getElementById('positionFilter').value;
             
-            let fileName = 'Kiem_ke_don_hang';
+            let fileName = 'Kiểm kê đơn hàng';
             
             // Lấy ngày nhập từ dữ liệu thực tế
             if (filteredData.length > 0) {
@@ -839,17 +954,15 @@
                     .map(date => {
                         // Xử lý nhiều format ngày
                         if (date.includes('/')) {
-                            // Format dd/mm/yyyy -> yyyy-mm-dd
                             const parts = date.split('/');
                             if (parts.length === 3) {
                                 return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
                             }
                         } else if (date.includes('-')) {
-                            // Format yyyy-mm-dd hoặc dd-mm-yyyy
                             const parts = date.split('-');
                             if (parts.length === 3) {
                                 if (parts[0].length === 4) {
-                                    return date; // Đã đúng format yyyy-mm-dd
+                                    return date; 
                                 } else {
                                     return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
                                 }
@@ -857,13 +970,13 @@
                         }
                         return date;
                     })
+                    .filter(dateStr => !isNaN(new Date(dateStr))) 
                     .sort();
 
                 if (dates.length > 0) {
                     const firstDate = dates[0];
                     const lastDate = dates[dates.length - 1];
                     
-                    // Format ngày cho tên file (yyyymmdd)
                     const formatDateForFile = (dateStr) => {
                         const date = new Date(dateStr);
                         if (!isNaN(date.getTime())) {
@@ -895,22 +1008,18 @@
             // Lấy vị trí từ dữ liệu hoặc bộ lọc
             let positionForFile = '';
             if (position) {
-                // Sử dụng vị trí từ bộ lọc
                 positionForFile = position;
             } else if (filteredData.length > 0) {
-                // Lấy vị trí phổ biến nhất từ dữ liệu
                 const positions = filteredData
                     .map(item => item.viTri)
                     .filter(pos => pos && pos.trim() !== '');
                 
                 if (positions.length > 0) {
-                    // Đếm tần suất xuất hiện của mỗi vị trí
                     const positionCount = {};
                     positions.forEach(pos => {
                         positionCount[pos] = (positionCount[pos] || 0) + 1;
                     });
                     
-                    // Lấy vị trí xuất hiện nhiều nhất
                     positionForFile = Object.keys(positionCount).reduce((a, b) => 
                         positionCount[a] > positionCount[b] ? a : b
                     );
@@ -921,10 +1030,10 @@
             if (positionForFile) {
                 const positionFormatted = positionForFile
                     .toLowerCase()
-                    .replace(/\s+/g, '-')  // Thay space bằng dấu gạch ngang
-                    .replace(/[^a-zA-Z0-9\-]/g, '')  // Giữ lại chữ, số và dấu gạch ngang
-                    .replace(/\-+/g, '-')  // Loại bỏ dấu gạch ngang liên tiếp
-                    .replace(/^\-|\-$/g, ''); // Loại bỏ dấu gạch ngang ở đầu/cuối
+                    .replace(/\s+/g, '-')  
+                    .replace(/[^a-zA-Z0-9\-]/g, '')  
+                    .replace(/\-+/g, '-')  
+                    .replace(/^\-|\-$/g, ''); 
                 
                 if (positionFormatted) {
                     fileName += `_${positionFormatted}`;
@@ -932,10 +1041,12 @@
             }
             
             // Thêm timestamp nếu không có thông tin ngày
-            if (!fileName.includes('20')) {
+            if (fileName.length < 20) {
                 const now = new Date();
                 const timestamp = now.toISOString().slice(0, 10).replace(/-/g, '');
-                fileName += `_${timestamp}`;
+                if (!fileName.includes(timestamp)) {
+                    fileName += `_${timestamp}`;
+                }
             }
             
             return fileName + '.xlsx';
@@ -951,6 +1062,8 @@
             if (allData.length > 0) {
                 applyFilters();
                 showStatus('Đã xóa tất cả bộ lọc!', 'success');
+            } else {
+                showStatus('Vui lòng tải dữ liệu trước khi xóa bộ lọc!', 'loading');
             }
         }
 
@@ -971,6 +1084,7 @@
             setDefaultDates();
             showStatus('Sẵn sàng tải dữ liệu. Nhấn "Tải dữ liệu" để bắt đầu.', 'loading');
         });
+        
     </script>
 </body>
 </html>
