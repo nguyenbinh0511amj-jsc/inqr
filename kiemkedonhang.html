@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kiểm Kê Đơn Hàng</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdL5b8719875F07+vL49R462Q519hL31v2R2Ff8e0Q5Fp0B+p0Qv6j+Q/Q0C6G51R7G0F61O+q5Fp0B+p0Q==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdL5b8719875F07+vL49R462Q519hL31v2R2Ff8e0Q5Fp0B+p0Qv6j+Q/Q0C6G51R7G0F61O+q5Fp0B+p0Qv6j+Q/Q0C6G51R7G0F61O+q5Fp0B+p0Q==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         /* Thiết lập chung */
@@ -22,11 +22,11 @@
         }
 
         .container {
-            max-width: 1500px;
+            max-width: 1800px; /* ĐÃ MỞ RỘNG: Tăng kích thước tối đa của container */
             margin: 0 auto;
             background: #ffffff;
             border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); /* Đổ bóng nhẹ */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); 
             overflow: hidden;
         }
 
@@ -526,11 +526,10 @@
     </div>
 
     <script>
-        // --- GIỮ NGUYÊN BLOCK SCRIPT (bao gồm cả các biến và hàm) ĐỂ ĐẢM BẢO CHỨC NĂNG ---
-
-        const SHEET_ID = '1uWHw7ME46tF5bkB0vrUM-Ubi982k4l3sHuqYcy3dFF4';
-        const API_KEY = 'AIzaSyCrC_DfD_DrpjzjO5ENvqTMHBA4FIDBiP0';
-        const RANGE = 'Nhập đơn hàng kiểm kê!A:O'; // Từ cột A đến O (15 cột)
+        // --- CẦN THAY THẾ SHEET_ID và API_KEY CỦA BẠN VÀO ĐÂY ---
+        const SHEET_ID = '1uWHw7ME46tF5bkB0vrUM-Ubi982k4l3sHuqYcy3dFF4'; // Thay bằng Sheet ID thực tế
+        const API_KEY = 'AIzaSyCrC_DfD_DrpjzjO5ENvqTMHBA4FIDBiP0'; // Thay bằng API Key thực tế
+        const RANGE = 'Nhập đơn hàng kiểm kê!A:O'; 
         
         let allData = [];
         let filteredData = [];
@@ -629,6 +628,7 @@
 
         // Fetch dữ liệu từ AppSheet API
         async function fetchGoogleSheetsData() {
+            // SỬ DỤNG V4 API
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${RANGE}?key=${API_KEY}`;
             
             console.log('Đang gọi API:', url);
@@ -642,7 +642,6 @@
             });
 
             console.log('Response status:', response.status);
-            // console.log('Response headers:', [...response.headers.entries()]); // Bỏ qua log này nếu quá dài
 
             if (!response.ok) {
                 const errorBody = await response.text();
@@ -676,14 +675,14 @@
             
             let errorHTML = `
                 <div style="text-align: left;">
-                    <h3><i class="fas fa-exclamation-triangle"></i> Lỗi Kết Nối AppSheet</h3>
+                    <h3><i class="fas fa-exclamation-triangle"></i> Lỗi Kết Nối Google Sheets API</h3>
                     <p><strong>Lỗi:</strong> ${error.message}</p>
                     <br>
             `;
 
-            if (error.message.includes('403')) {
+            if (error.message.includes('403') || error.message.includes('API key not valid')) {
                 errorHTML += `
-                    <h4><i class="fas fa-tools"></i> Khắc phục lỗi 403 (Forbidden):</h4>
+                    <h4><i class="fas fa-tools"></i> Khắc phục lỗi 403 (Forbidden) hoặc API Key:</h4>
                     <ol>
                         <li><strong>Kiểm tra API Key:</strong>
                             <ul>
@@ -692,38 +691,33 @@
                                 <li>Kiểm tra quota và usage limits</li>
                             </ul>
                         </li>
-                        <li><strong>Bật AppSheet API:</strong>
+                        <li><strong>Bật Sheets API:</strong>
                             <ul>
-                                <li>Trong Google Cloud Console, tìm và bật "AppSheet API"</li>
-                                <li>Đảm bảo project đã được billing enabled (nếu cần)</li>
+                                <li>Trong Google Cloud Console, tìm và **bật "Google Sheets API"** cho Project của bạn.</li>
                             </ul>
                         </li>
                         <li><strong>Kiểm tra quyền truy cập Sheet:</strong>
                             <ul>
                                 <li>Mở Google Sheet: <a href="https://docs.google.com/spreadsheets/d/${SHEET_ID}" target="_blank">Mở Sheet</a></li>
-                                <li>Nhấn "Share" và đặt quyền là "Anyone with the link can view" (Công khai)</li>
-                                <li>Hoặc thêm service account email vào sheet</li>
+                                <li>Nhấn "Share" và đặt quyền là **"Anyone with the link can view"** (Công khai)</li>
                             </ul>
                         </li>
                     </ol>
                 `;
-            } else if (error.message.includes('404')) {
+            } else if (error.message.includes('404') || error.message.includes('Unable to parse range')) {
                 errorHTML += `
-                    <h4><i class="fas fa-tools"></i> Khắc phục lỗi 404 (Not Found):</h4>
+                    <h4><i class="fas fa-tools"></i> Khắc phục lỗi 404 (Not Found) / Range:</h4>
                     <ol>
-                        <li><strong>Kiểm tra Sheet ID:</strong> <code>${SHEET_ID}</code></li>
-                        <li><strong>Kiểm tra tên Sheet:</strong> Đảm bảo có sheet tên "Nhập đơn hàng kiểm kê"</li>
-                        <li><strong>Kiểm tra quyền truy cập:</strong> Sheet có thể đã bị xóa hoặc chưa được public</li>
+                        <li><strong>Kiểm tra Sheet ID:</strong> <code>${SHEET_ID}</code> (Đảm bảo ID là đúng)</li>
+                        <li><strong>Kiểm tra tên Sheet/Range:</strong> Đảm bảo tên sheet <code>Nhập đơn hàng kiểm kê</code> và range <code>A:O</code> là chính xác.</li>
                     </ol>
                 `;
             } else {
                 errorHTML += `
                     <h4><i class="fas fa-tools"></i> Các bước kiểm tra chung:</h4>
                     <ol>
-                        <li>Kiểm tra kết nối internet</li>
                         <li>Thử refresh trang và load lại</li>
                         <li>Kiểm tra browser console (F12) để xem lỗi chi tiết</li>
-                        <li>Đảm bảo CORS được cấu hình đúng (nếu đây là ứng dụng server)</li>
                     </ol>
                 `;
             }
@@ -809,7 +803,7 @@
             updateStats();
         }
 
-        // Hiển thị dữ liệu trong bảng (ĐÃ CHỈNH SỬA)
+        // Hiển thị dữ liệu trong bảng 
         function displayData() {
             const tbody = document.getElementById('dataBody');
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
@@ -827,6 +821,7 @@
 
                 cells.forEach((cellValue, index) => {
                     const cell = document.createElement('td');
+                    cellValue = String(cellValue); // Đảm bảo cellValue là string
                     
                     if (searchTerm && cellValue.toLowerCase().includes(searchTerm)) {
                         cell.innerHTML = highlightText(cellValue, searchTerm);
@@ -862,19 +857,19 @@
             return text.replace(regex, '<span class="highlight">$1</span>');
         }
 
-        // Cập nhật thống kê (ĐÃ BỔ SUNG TÍNH TỔNG SLL)
+        // Cập nhật thống kê
         function updateStats() {
             document.getElementById('totalRecords').textContent = allData.length;
             document.getElementById('filteredRecords').textContent = filteredData.length;
 
-            // Tính Tổng SLL từ dữ liệu đã lọc (BỔ SUNG)
+            // Tính Tổng SLL từ dữ liệu đã lọc
             const totalSLL = filteredData.reduce((sum, item) => {
                 // Đảm bảo item.sll là một số hợp lệ trước khi cộng
                 const sllValue = parseInt(item.sll);
                 return sum + (isNaN(sllValue) ? 0 : sllValue);
             }, 0);
 
-            // Hiển thị Tổng SLL đã tính (BỔ SUNG)
+            // Hiển thị Tổng SLL đã tính
             document.getElementById('totalSLL').textContent = totalSLL.toLocaleString('en-US'); 
             
             const uniquePositions = new Set(filteredData.map(item => item.viTri).filter(pos => pos));
@@ -944,7 +939,7 @@
             const toDate = document.getElementById('toDate').value;
             const position = document.getElementById('positionFilter').value;
             
-            let fileName = 'Kiểm kê đơn hàng';
+            let fileName = 'KiemKeDonHang';
             
             // Lấy ngày nhập từ dữ liệu thực tế
             if (filteredData.length > 0) {
@@ -1040,7 +1035,7 @@
                 }
             }
             
-            // Thêm timestamp nếu không có thông tin ngày
+            // Thêm timestamp nếu không có thông tin ngày (để tránh tên file trùng lặp)
             if (fileName.length < 20) {
                 const now = new Date();
                 const timestamp = now.toISOString().slice(0, 10).replace(/-/g, '');
@@ -1079,10 +1074,10 @@
             searchTimeout = setTimeout(applyFilters, 300);
         });
 
-        // Khởi tạo trang
+        // Khởi tạo trang (ĐÃ BỔ SUNG TỰ ĐỘNG TẢI DỮ LIỆU)
         document.addEventListener('DOMContentLoaded', function() {
             setDefaultDates();
-            showStatus('Sẵn sàng tải dữ liệu. Nhấn "Tải dữ liệu" để bắt đầu.', 'loading');
+            loadData(); 
         });
         
     </script>
