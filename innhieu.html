@@ -158,22 +158,56 @@
                 font-size: 20px;
                 font-weight: bold;
                 white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
+                max-width: 100%;
+                overflow: visible;
+                display: inline-block;
+                box-sizing: border-box;
+                word-wrap: break-word;
+                word-break: break-all;
             }
 
             .small {
                 float: right;
                 font-size: 13px;
                 margin-top: 9px;
+                white-space: nowrap;
+                max-width: 30mm;
+                overflow: visible;
             }
 
             .info-row.lon {
                 font-size: 24px;
+                max-width: calc(100% - 35mm);
+                display: inline-block;
+                white-space: nowrap;
+                overflow: visible;
+                box-sizing: border-box;
+                word-wrap: break-word;
+                word-break: break-all;
             }
 
             .info-row strong {
                 font-size: 20px;
+            }
+
+            /* CSS cho việc tự động thu nhỏ text */
+            .info-row.auto-resize {
+                transition: font-size 0.1s ease;
+            }
+
+            .info-row.auto-resize.lon {
+                font-size: clamp(10px, 24px, 24px);
+                line-height: 1.1;
+            }
+
+            .info-row.auto-resize:not(.lon):not(.small) {
+                font-size: clamp(8px, 20px, 20px);
+                line-height: 1.1;
+            }
+
+            .info-row.auto-resize.small {
+                font-size: clamp(8px, 13px, 13px);
+                line-height: 1.1;
             }
 
             .qr-code-section {
@@ -380,6 +414,119 @@
 
 
 
+        function adjustFontSize(element, maxFontSize, minFontSize) {
+            if (!element || !element.parentElement) return;
+            
+            // Tìm container info-section (phần chứa text)
+            const infoSection = element.closest('.info-section');
+            if (!infoSection) return;
+            
+            // Tìm print-label để lấy kích thước thực tế
+            const printLabel = element.closest('.print-label');
+            if (!printLabel) return;
+            
+            // Lấy chiều rộng của info-section hoặc tính từ print-label
+            // Tem in nhiệt: 100mm, QR code: 26mm + margin 2mm = 28mm, padding 2mm mỗi bên = 4mm
+            // Phần text còn lại: 100mm - 28mm - 4mm = 68mm
+            // Chuyển đổi mm sang px (1mm ≈ 3.779527559px ở 96 DPI)
+            const mmToPx = 3.779527559;
+            const labelWidth = 100 * mmToPx; // 100mm
+            const qrCodeWidth = 28 * mmToPx; // 28mm
+            const padding = 4 * mmToPx; // 4mm padding
+            const containerWidth = infoSection.offsetWidth || infoSection.clientWidth || (labelWidth - qrCodeWidth - padding);
+            
+            if (containerWidth <= 0) return;
+            
+            const text = element.textContent || '';
+            if (!text.trim()) return;
+            
+            // Tính toán chiều rộng tối đa cho text (trừ đi khoảng trống cho các phần tử khác)
+            let maxTextWidth = containerWidth;
+            
+            // Nếu là phần tử lon (tên chi tiết), trừ đi khoảng trống cho số file
+            if (element.classList.contains('lon')) {
+                const parentDiv = element.parentElement;
+                if (parentDiv) {
+                    const smallElement = parentDiv.querySelector('.small');
+                    if (smallElement) {
+                        // Tính chiều rộng của phần số file
+                        const tempSmall = smallElement.cloneNode(true);
+                        tempSmall.style.position = 'absolute';
+                        tempSmall.style.visibility = 'hidden';
+                        tempSmall.style.whiteSpace = 'nowrap';
+                        tempSmall.style.fontSize = '13px';
+                        tempSmall.style.fontWeight = getComputedStyle(smallElement).fontWeight || 'normal';
+                        tempSmall.style.fontFamily = getComputedStyle(smallElement).fontFamily || 'Times New Roman';
+                        document.body.appendChild(tempSmall);
+                        const smallWidth = tempSmall.offsetWidth || tempSmall.scrollWidth;
+                        document.body.removeChild(tempSmall);
+                        maxTextWidth = containerWidth - smallWidth - 15; // Trừ đi 15px cho khoảng cách
+                    }
+                }
+            }
+            
+            // Đối với Order Bus và Qty, sử dụng toàn bộ chiều rộng container
+            if (element.textContent.includes('Order Bus:') || element.textContent.includes('Qty:')) {
+                maxTextWidth = containerWidth;
+            }
+            
+            // Đảm bảo maxTextWidth không âm và có giá trị hợp lý
+            if (maxTextWidth <= 0) maxTextWidth = containerWidth * 0.6;
+            if (maxTextWidth < 50) maxTextWidth = 50; // Tối thiểu 50px
+            
+            // Áp dụng max-width ngay từ đầu để tránh text tràn ra ngoài
+            element.style.maxWidth = maxTextWidth + 'px';
+            element.style.whiteSpace = 'nowrap';
+            element.style.overflow = 'visible';
+            element.style.display = 'inline-block';
+            
+            let currentFontSize = maxFontSize;
+            
+            // Tạo một element tạm để đo chiều rộng chính xác
+            const tempElement = document.createElement('span');
+            tempElement.textContent = text;
+            tempElement.style.position = 'absolute';
+            tempElement.style.visibility = 'hidden';
+            tempElement.style.whiteSpace = 'nowrap';
+            tempElement.style.fontSize = maxFontSize + 'px';
+            tempElement.style.fontWeight = getComputedStyle(element).fontWeight || 'bold';
+            tempElement.style.fontFamily = getComputedStyle(element).fontFamily || 'Times New Roman';
+            tempElement.style.top = '-9999px';
+            tempElement.style.left = '-9999px';
+            document.body.appendChild(tempElement);
+            
+            // Giảm font-size cho đến khi text vừa với container
+            let iterations = 0;
+            const maxIterations = 50; // Giảm số lần lặp để tối ưu hiệu suất
+            
+            // Đối với Order Bus và Qty, tăng độ nhạy
+            const stepSize = (element.textContent.includes('Order Bus:') || element.textContent.includes('Qty:')) ? 0.5 : 0.8;
+            
+            while (iterations < maxIterations) {
+                tempElement.style.fontSize = currentFontSize + 'px';
+                const textWidth = tempElement.offsetWidth || tempElement.scrollWidth;
+                
+                // Kiểm tra chiều rộng và dừng khi vừa đủ hoặc đạt minFontSize
+                if (textWidth <= maxTextWidth || currentFontSize <= minFontSize) {
+                    break;
+                }
+                currentFontSize -= stepSize; // Sử dụng bước nhảy phù hợp
+                iterations++;
+            }
+            
+            document.body.removeChild(tempElement);
+            
+            // Đảm bảo không nhỏ hơn minFontSize
+            if (currentFontSize < minFontSize) {
+                currentFontSize = minFontSize;
+            }
+            
+            // Áp dụng font-size đã tính toán
+            element.style.fontSize = currentFontSize + 'px';
+            element.style.maxWidth = maxTextWidth + 'px';
+            element.style.overflow = 'visible';
+        }
+
         function printSelectedLabels() {
             const printArea = document.getElementById('printArea');
             printArea.innerHTML = '';
@@ -402,11 +549,30 @@
 
                 const infoSection = document.createElement('div');
                 infoSection.className = 'info-section';
-                infoSection.innerHTML = `
-            <div ><span class="info-row lon">${item.ten_chi_tiet}</span> <span class="info-row small">(${item.so_file})</span></div>
-            <div class="info-row">Order Bus:${item.order_kd}</div>
-            <div class="info-row">Qty:${item.so_luong} </div>
-        `;
+                
+                const tenChiTietSpan = document.createElement('span');
+                tenChiTietSpan.className = 'info-row lon auto-resize';
+                tenChiTietSpan.textContent = item.ten_chi_tiet;
+                
+                const soFileSpan = document.createElement('span');
+                soFileSpan.className = 'info-row small auto-resize';
+                soFileSpan.textContent = `(${item.so_file})`;
+                
+                const tenChiTietDiv = document.createElement('div');
+                tenChiTietDiv.appendChild(tenChiTietSpan);
+                tenChiTietDiv.appendChild(soFileSpan);
+                
+                const orderDiv = document.createElement('div');
+                orderDiv.className = 'info-row auto-resize';
+                orderDiv.textContent = `Order Bus:${item.order_kd}`;
+                
+                const qtyDiv = document.createElement('div');
+                qtyDiv.className = 'info-row auto-resize';
+                qtyDiv.textContent = `Qty:${item.so_luong}`;
+                
+                infoSection.appendChild(tenChiTietDiv);
+                infoSection.appendChild(orderDiv);
+                infoSection.appendChild(qtyDiv);
 
                 const qrCodeSection = document.createElement('div');
                 qrCodeSection.className = 'qr-code-section';
@@ -422,13 +588,101 @@
                     height: 90,
                     correctLevel: QRCode.CorrectLevel.H
                 });
+                
+                // Áp dụng max-width ngay từ đầu để tránh text tràn
+                tenChiTietSpan.style.maxWidth = 'calc(100% - 35mm)';
+                tenChiTietSpan.style.display = 'inline-block';
+                tenChiTietSpan.style.overflow = 'visible';
+                
+                orderDiv.style.maxWidth = '100%';
+                orderDiv.style.display = 'inline-block';
+                orderDiv.style.overflow = 'visible';
+                
+                qtyDiv.style.maxWidth = '100%';
+                qtyDiv.style.display = 'inline-block';
+                qtyDiv.style.overflow = 'visible';
+                
+                soFileSpan.style.maxWidth = '30mm';
+                soFileSpan.style.overflow = 'visible';
             });
 
             console.log(`Số lượng nhãn đã tạo: ${printArea.children.length}`);
 
+            // Hiển thị printArea tạm thời để có thể đo đạc chính xác
+            const originalDisplay = printArea.style.display;
+            printArea.style.display = 'block';
+            printArea.style.position = 'absolute';
+            printArea.style.left = '-9999px';
+            printArea.style.top = '-9999px';
+            printArea.style.visibility = 'hidden';
+
+            // Đợi tất cả các element được render hoàn toàn trước khi điều chỉnh font-size
             setTimeout(() => {
-                window.print();
-            }, 1000);
+                // Force reflow để đảm bảo layout được tính toán
+                printArea.offsetHeight;
+                
+                // Điều chỉnh font-size cho tên chi tiết
+                printArea.querySelectorAll('.info-row.lon').forEach(element => {
+                    adjustFontSize(element, 24, 8);
+                });
+                
+                // Điều chỉnh font-size cho Order Bus
+                printArea.querySelectorAll('.info-row:not(.lon):not(.small)').forEach(element => {
+                    if (element.textContent.includes('Order Bus:')) {
+                        adjustFontSize(element, 20, 6);
+                    }
+                });
+                
+                // Điều chỉnh font-size cho Qty
+                printArea.querySelectorAll('.info-row:not(.lon):not(.small)').forEach(element => {
+                    if (element.textContent.includes('Qty:')) {
+                        adjustFontSize(element, 20, 6);
+                    }
+                });
+                
+                // Điều chỉnh font-size cho số file
+                printArea.querySelectorAll('.info-row.small').forEach(element => {
+                    adjustFontSize(element, 13, 6);
+                });
+                
+                // Force reflow lại sau khi điều chỉnh
+                printArea.offsetHeight;
+                
+                // Điều chỉnh lại một lần nữa để đảm bảo chính xác
+                setTimeout(() => {
+                    printArea.querySelectorAll('.info-row.lon').forEach(element => {
+                        adjustFontSize(element, 24, 8);
+                    });
+                    
+                    printArea.querySelectorAll('.info-row:not(.lon):not(.small)').forEach(element => {
+                        if (element.textContent.includes('Order Bus:')) {
+                            adjustFontSize(element, 20, 6);
+                        }
+                    });
+                    
+                    printArea.querySelectorAll('.info-row:not(.lon):not(.small)').forEach(element => {
+                        if (element.textContent.includes('Qty:')) {
+                            adjustFontSize(element, 20, 6);
+                        }
+                    });
+                    
+                    printArea.querySelectorAll('.info-row.small').forEach(element => {
+                        adjustFontSize(element, 13, 6);
+                    });
+                    
+                    // Khôi phục display của printArea
+                    printArea.style.display = originalDisplay;
+                    printArea.style.position = '';
+                    printArea.style.left = '';
+                    printArea.style.top = '';
+                    printArea.style.visibility = '';
+                    
+                    // Đợi thêm một chút để đảm bảo font-size đã được điều chỉnh xong
+                    setTimeout(() => {
+                        window.print();
+                    }, 200);
+                }, 100);
+            }, 300);
         }
 
         function getCurrentDate() {
