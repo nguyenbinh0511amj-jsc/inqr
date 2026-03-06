@@ -40,6 +40,11 @@
           margin: 0;
           box-sizing: border-box;
           overflow: hidden;
+          border-style: solid;
+          border: 0.5mm solid #000;
+          border-radius: 0.2mm;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
         }
 
         .label-table {
@@ -140,14 +145,29 @@
         /* ~100mm at 96dpi */
         height: 113px;
         /* ~30mm at 96dpi */
-        border: 2px solid #333;
+        border: 3px solid #111;
         margin: 8px;
         display: inline-block;
         vertical-align: top;
         overflow: hidden;
         font-family: "Times New Roman", Times, serif;
+        box-shadow: 0 0 0.5px rgba(0, 0, 0, 0.35);
       }
 
+      .preview-label {
+        width: 378px;
+        /* ~100mm at 96dpi */
+        height: 113px;
+        /* ~30mm at 96dpi */
+        border: 2px solid #111;
+        border-radius: 0.5px;
+        margin: 8px;
+        display: inline-block;
+        vertical-align: top;
+        overflow: hidden;
+        font-family: "Times New Roman", Times, serif;
+        box-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.35);
+      }
       .preview-label .label-table {
         width: 100%;
         height: 100%;
