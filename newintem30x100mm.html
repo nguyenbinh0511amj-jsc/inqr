@@ -308,6 +308,153 @@
         transform: translateY(-1px);
       }
 
+      /* ====== Change Password Modal ====== */
+      #changePwModal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(3px);
+        align-items: center;
+        justify-content: center;
+      }
+
+      #changePwModal.show { display: flex; }
+
+      .chpw-box {
+        background: #fff;
+        border-radius: 1rem;
+        box-shadow: 0 24px 64px rgba(15, 23, 42, 0.18);
+        padding: 2rem 2rem 1.5rem;
+        width: 100%;
+        max-width: 420px;
+        animation: modalIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+      }
+
+      .chpw-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+      }
+
+      .chpw-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+      }
+
+      .chpw-subtitle {
+        font-size: 0.82rem;
+        color: #64748b;
+        margin-bottom: 1.4rem;
+      }
+
+      .chpw-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.3rem;
+        display: block;
+      }
+
+      .chpw-field {
+        margin-bottom: 1rem;
+      }
+
+      .chpw-input-wrap {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+
+      .chpw-input-wrap input {
+        width: 100%;
+        padding: 0.62rem 2.9rem 0.62rem 0.9rem;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 0.55rem;
+        font-size: 1rem;
+        letter-spacing: 0.15em;
+        outline: none;
+        transition: border-color 0.18s, box-shadow 0.18s;
+        color: #1e293b;
+        font-family: 'Courier New', monospace;
+        background: #f8fafc;
+      }
+
+      .chpw-input-wrap input:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        background: #fff;
+      }
+
+      .chpw-input-wrap input[type="text"] {
+        letter-spacing: 0.05em;
+        font-family: inherit;
+      }
+
+      .chpw-input-wrap .eye-btn { position: absolute; right: 0.7rem; }
+
+      .chpw-error {
+        font-size: 0.78rem;
+        color: #dc2626;
+        margin-top: 0.3rem;
+        display: none;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .chpw-error.show { display: flex; }
+
+      .chpw-success {
+        font-size: 0.82rem;
+        color: #16a34a;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 0.5rem;
+        padding: 0.6rem 0.9rem;
+        margin-bottom: 1rem;
+        display: none;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .chpw-success.show { display: flex; }
+
+      .chpw-strength {
+        height: 4px;
+        border-radius: 2px;
+        margin-top: 0.4rem;
+        transition: width 0.3s, background 0.3s;
+        width: 0%;
+        background: #e2e8f0;
+      }
+
+      .chpw-strength-wrap {
+        height: 4px;
+        background: #e2e8f0;
+        border-radius: 2px;
+        margin-top: 0.4rem;
+        overflow: hidden;
+      }
+
+      .chpw-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+        margin-top: 0.5rem;
+      }
+
+      @media screen and (max-width: 768px) {
+        .chpw-box { margin: 1rem; max-width: calc(100% - 2rem); }
+      }
+
       /* ====== Screen preview style ====== */
       .preview-label {
         width: 378px;
@@ -689,6 +836,78 @@
       </div>
     </div>
 
+    <!-- ===== Change Password Modal ===== -->
+    <div id="changePwModal" role="dialog" aria-modal="true" aria-labelledby="chpwTitle">
+      <div class="chpw-box">
+        <div class="chpw-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+        </div>
+        <div class="chpw-title" id="chpwTitle">Đổi mật khẩu</div>
+        <div class="chpw-subtitle">Nhập mật khẩu hiện tại và mật khẩu mới để thay đổi.</div>
+
+        <div class="chpw-success" id="chpwSuccess">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Đổi mật khẩu thành công!
+        </div>
+
+        <!-- Mật khẩu hiện tại -->
+        <div class="chpw-field">
+          <label class="chpw-label" for="chpwCurrent">Mật khẩu hiện tại</label>
+          <div class="chpw-input-wrap">
+            <input type="password" id="chpwCurrent" placeholder="Nhập mật khẩu hiện tại..." autocomplete="current-password" oninput="clearChpwErrors()" />
+            <button type="button" class="eye-btn" onclick="toggleChpwEye('chpwCurrent','eyeCurrent1','eyeCurrent2')" title="Hiện/ẩn">
+              <svg id="eyeCurrent1" xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              <svg id="eyeCurrent2" xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+            </button>
+          </div>
+          <div class="chpw-error" id="chpwErrorCurrent">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            Mật khẩu hiện tại không đúng!
+          </div>
+        </div>
+
+        <!-- Mật khẩu mới -->
+        <div class="chpw-field">
+          <label class="chpw-label" for="chpwNew">Mật khẩu mới</label>
+          <div class="chpw-input-wrap">
+            <input type="password" id="chpwNew" placeholder="Nhập mật khẩu mới..." autocomplete="new-password" oninput="checkNewPwStrength()" />
+            <button type="button" class="eye-btn" onclick="toggleChpwEye('chpwNew','eyeNew1','eyeNew2')" title="Hiện/ẩn">
+              <svg id="eyeNew1" xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              <svg id="eyeNew2" xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+            </button>
+          </div>
+          <div class="chpw-strength-wrap"><div class="chpw-strength" id="chpwStrengthBar"></div></div>
+          <div class="chpw-error" id="chpwErrorNew">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            <span id="chpwErrorNewText">Mật khẩu mới phải có ít nhất 2 ký tự!</span>
+          </div>
+        </div>
+
+        <!-- Xác nhận mật khẩu mới -->
+        <div class="chpw-field">
+          <label class="chpw-label" for="chpwConfirm">Xác nhận mật khẩu mới</label>
+          <div class="chpw-input-wrap">
+            <input type="password" id="chpwConfirm" placeholder="Nhập lại mật khẩu mới..." autocomplete="new-password" oninput="clearChpwErrors()" />
+            <button type="button" class="eye-btn" onclick="toggleChpwEye('chpwConfirm','eyeConfirm1','eyeConfirm2')" title="Hiện/ẩn">
+              <svg id="eyeConfirm1" xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              <svg id="eyeConfirm2" xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+            </button>
+          </div>
+          <div class="chpw-error" id="chpwErrorConfirm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            Mật khẩu xác nhận không khớp!
+          </div>
+        </div>
+
+        <div class="chpw-actions">
+          <button type="button" class="modal-btn modal-btn-cancel" onclick="closeChangePwModal()">Hủy</button>
+          <button type="button" class="modal-btn" onclick="submitChangePassword()" style="background:linear-gradient(135deg,#2563eb,#1e40af);color:#fff;box-shadow:0 4px 14px rgba(37,99,235,0.22);">Đổi mật khẩu</button>
+        </div>
+      </div>
+    </div>
+
     <div class="container mx-auto max-w-7xl no-print">
       <!-- Sticky container for both header and pagination -->
       <div class="sticky-container">
@@ -730,6 +949,14 @@
                 class="bg-gradient-to-r from-red-600 to-black hover:from-red-700 hover:to-gray-900 text-white font-bold py-2 px-4 rounded w-full md:w-auto shadow-sm"
               >
                 In đã chọn
+              </button>
+              <button
+                onclick="openChangePwModal()"
+                title="Đổi mật khẩu in lại"
+                class="flex items-center gap-2 bg-white border border-blue-200 hover:bg-blue-50 text-blue-700 font-semibold py-2 px-4 rounded w-full md:w-auto shadow-sm transition-all"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                Đổi mật khẩu
               </button>
             </div>
           </div>
@@ -846,7 +1073,7 @@
 
       function confirmPassword() {
         const pw = document.getElementById('modalPasswordInput').value;
-        if (pw !== 'a1') {
+        if (pw !== getCurrentPassword()) {
           const errEl = document.getElementById('modalError');
           errEl.classList.add('show');
           document.getElementById('modalPasswordInput').focus();
@@ -877,6 +1104,139 @@
         if (e.key === 'Escape') closePasswordModal();
         // Clear error on typing
         document.getElementById('modalError').classList.remove('show');
+      });
+
+      // === Change Password Modal ===
+      const PW_STORAGE_KEY = 'appPrintPassword';
+
+      function getCurrentPassword() {
+        return localStorage.getItem(PW_STORAGE_KEY) || 'a1';
+      }
+
+      function savePassword(pw) {
+        localStorage.setItem(PW_STORAGE_KEY, pw);
+      }
+
+      function openChangePwModal() {
+        document.getElementById('chpwCurrent').value = '';
+        document.getElementById('chpwNew').value = '';
+        document.getElementById('chpwConfirm').value = '';
+        document.getElementById('chpwStrengthBar').style.width = '0%';
+        clearChpwErrors();
+        document.getElementById('chpwSuccess').classList.remove('show');
+        // Reset all eye icons
+        ['Current','New','Confirm'].forEach(k => {
+          const inp = document.getElementById('chpw' + k);
+          inp.type = 'password';
+          document.getElementById('eye' + k + '1').style.display = 'block';
+          document.getElementById('eye' + k + '2').style.display = 'none';
+        });
+        document.getElementById('changePwModal').classList.add('show');
+        setTimeout(() => document.getElementById('chpwCurrent').focus(), 80);
+      }
+
+      function closeChangePwModal() {
+        document.getElementById('changePwModal').classList.remove('show');
+      }
+
+      function toggleChpwEye(inputId, showId, hideId) {
+        const inp = document.getElementById(inputId);
+        const s = document.getElementById(showId);
+        const h = document.getElementById(hideId);
+        if (inp.type === 'password') {
+          inp.type = 'text';
+          s.style.display = 'none';
+          h.style.display = 'block';
+        } else {
+          inp.type = 'password';
+          s.style.display = 'block';
+          h.style.display = 'none';
+        }
+        inp.focus();
+      }
+
+      function clearChpwErrors() {
+        ['chpwErrorCurrent','chpwErrorNew','chpwErrorConfirm'].forEach(id => {
+          document.getElementById(id).classList.remove('show');
+        });
+      }
+
+      function checkNewPwStrength() {
+        clearChpwErrors();
+        const pw = document.getElementById('chpwNew').value;
+        const bar = document.getElementById('chpwStrengthBar');
+        let strength = 0;
+        if (pw.length >= 2) strength++;
+        if (pw.length >= 6) strength++;
+        if (/[A-Z]/.test(pw) || /[0-9]/.test(pw)) strength++;
+        if (/[^A-Za-z0-9]/.test(pw)) strength++;
+        const colors = ['#ef4444','#f97316','#eab308','#22c55e'];
+        const widths = ['25%','50%','75%','100%'];
+        if (pw.length === 0) {
+          bar.style.width = '0%';
+        } else {
+          bar.style.width = widths[Math.min(strength - 1, 3)];
+          bar.style.background = colors[Math.min(strength - 1, 3)];
+        }
+      }
+
+      function shakeInput(inputId) {
+        const el = document.getElementById(inputId);
+        el.style.transition = 'transform 0.08s';
+        el.style.transform = 'translateX(6px)';
+        setTimeout(() => { el.style.transform = 'translateX(-6px)'; }, 80);
+        setTimeout(() => { el.style.transform = 'translateX(4px)'; }, 160);
+        setTimeout(() => { el.style.transform = 'translateX(0)'; }, 240);
+      }
+
+      function submitChangePassword() {
+        clearChpwErrors();
+        const current = document.getElementById('chpwCurrent').value;
+        const newPw = document.getElementById('chpwNew').value;
+        const confirm = document.getElementById('chpwConfirm').value;
+        let hasError = false;
+
+        if (current !== getCurrentPassword()) {
+          document.getElementById('chpwErrorCurrent').classList.add('show');
+          shakeInput('chpwCurrent');
+          hasError = true;
+        }
+
+        if (newPw.length < 2) {
+          document.getElementById('chpwErrorNewText').textContent = 'Mật khẩu mới phải có ít nhất 2 ký tự!';
+          document.getElementById('chpwErrorNew').classList.add('show');
+          if (!hasError) shakeInput('chpwNew');
+          hasError = true;
+        }
+
+        if (!hasError && newPw !== confirm) {
+          document.getElementById('chpwErrorConfirm').classList.add('show');
+          shakeInput('chpwConfirm');
+          hasError = true;
+        }
+
+        if (hasError) return;
+
+        savePassword(newPw);
+
+        // Cập nhật hàm xác nhận mật khẩu để dùng mật khẩu mới
+        document.getElementById('chpwSuccess').classList.add('show');
+        document.getElementById('chpwCurrent').value = '';
+        document.getElementById('chpwNew').value = '';
+        document.getElementById('chpwConfirm').value = '';
+        document.getElementById('chpwStrengthBar').style.width = '0%';
+        setTimeout(() => closeChangePwModal(), 1800);
+      }
+
+      // Close on backdrop click
+      document.getElementById('changePwModal').addEventListener('click', function(e) {
+        if (e.target === this) closeChangePwModal();
+      });
+
+      // Enter key on confirm field submits
+      document.getElementById('chpwConfirm').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') submitChangePassword();
+        if (e.key === 'Escape') closeChangePwModal();
       });
 
       // === Print count functions (localStorage) ===
