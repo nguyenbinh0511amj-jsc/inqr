@@ -257,11 +257,12 @@
             border-collapse: separate;
             border-spacing: 0;
             width: 100%;
+            table-layout: fixed;
             border: none;
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-            margin: 25px 0;
+            margin: 0;
         }
 
         #dataTable th {
@@ -365,6 +366,7 @@
 
         #headerTable {
             margin-bottom: 0;
+            table-layout: fixed;
         }
 
         #headerTable thead tr {
@@ -556,8 +558,9 @@
                     style="width:100%; margin-bottom: 0;">
                     <thead>
                         <tr>
-                            <th width="10%"><input type="checkbox" id="selectAll"></th>
-                            <th width="15%">File bản vẽ</th>
+                            <th width="5%" style="text-align:center"></th>
+                            <th width="8%" style="text-align:center"><input type="checkbox" id="selectAll"></th>
+                            <th width="12%">File bản vẽ</th>
                             <th width="10%">STT</th>
                             <th width="25%">Order KD</th>
                             <th width="25%">Tên chi tiết</th>
@@ -603,8 +606,8 @@
         };
 
         // Constants for AppSheet connection
-        const appId = '04a82add-ca65-43d2-876d-5564d1e9d921';
-        const accessKey = 'V2-ILllp-nmvuk-RaTjK-1Pyph-sGfmy-e2TJr-Z0w1l-rNQue';
+        const appId = 'e1339939-5987-4d7a-8c73-436348abf6b7';
+        const accessKey = 'V2-WTcys-x7QFl-Z5SzF-zSe7D-qciuV-yaUHk-CDGEe-oSexL';
         const region = 'www';
 
         // Hiển thị loading indicator
@@ -614,6 +617,9 @@
         let allOrderData = [];
         let dataTable;
         const productCache = {}; // Cache cho dữ liệu sản phẩm
+        const quang3DCache = {}; // Cache cho dữ liệu đo 3D quang
+        const giaoHangPSXCache = {}; // Cache cho dữ liệu giao hàng PSX
+        let orderDataMap = new Map(); // Map để lookup nhanh theo order_kd
 
         // Fetch dữ liệu đơn hàng
         async function fetchBatchedOrders() {
@@ -638,12 +644,7 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                const text = await response.text();
-                if (!text || text.trim() === '') {
-                    return [];
-                }
-
-                const data = JSON.parse(text);
+                const data = await response.json();
                 if (!Array.isArray(data)) {
                     return [];
                 }
@@ -651,20 +652,16 @@
                 // Lọc dữ liệu hợp lệ (có order_kd và ten_chi_tiet)
                 const filteredData = data.filter(item => item.order_kd && item.ten_chi_tiet);
 
-                // Sắp xếp theo _RowNumber giảm dần (nếu có)
-                const sortedData = [...filteredData].sort((a, b) => {
-                    // Kiểm tra xem dữ liệu có _RowNumber không
+                // Sắp xếp theo _RowNumber giảm dần (in-place, không tạo mảng mới)
+                filteredData.sort((a, b) => {
                     if (a._RowNumber !== undefined && b._RowNumber !== undefined) {
-                        return b._RowNumber - a._RowNumber; // Sắp xếp giảm dần
+                        return b._RowNumber - a._RowNumber;
                     }
-                    // Fallback nếu không có _RowNumber
                     return 0;
                 });
 
-                console.log("Dữ liệu sau khi sắp xếp theo _RowNumber:",
-                    sortedData.map(item => `${item._RowNumber || 'N/A'} - ${item.order_kd}`));
-
-                return sortedData;
+                console.log(`Đã tải ${filteredData.length} đơn hàng`);
+                return filteredData;
             } catch (error) {
                 console.error('Lỗi khi lấy dữ liệu đơn hàng:', error);
                 throw error;
@@ -680,8 +677,22 @@
             data.forEach((item, index) => {
                 const row = tableBody.insertRow();
 
+                // Nút In nhanh
+                const cellQuickPrint = row.insertCell(0);
+                cellQuickPrint.style.textAlign = 'center';
+                const printBtn = document.createElement('button');
+                printBtn.textContent = '🖨️';
+                printBtn.title = 'In nhanh';
+                printBtn.style.cssText = 'border:none; background:none; cursor:pointer; font-size:18px; padding:0;';
+                printBtn.setAttribute('data-order', item.order_kd);
+                printBtn.addEventListener('click', function () {
+                    quickPrint(this.getAttribute('data-order'));
+                });
+                cellQuickPrint.appendChild(printBtn);
+
                 // Checkbox
-                const cellCheckbox = row.insertCell(0);
+                const cellCheckbox = row.insertCell(1);
+                cellCheckbox.style.textAlign = 'center';
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.className = 'row-checkbox';
@@ -689,13 +700,13 @@
                 cellCheckbox.appendChild(checkbox);
 
                 // THAY ĐỔI: Lấy file_ban_ve từ dữ liệu sản phẩm
-                const cellTinhChat = row.insertCell(1);
+                const cellTinhChat = row.insertCell(2);
                 const productData = productCache[item.ten_chi_tiet];
                 if (productData && productData.file_ban_ve) {
                     const fileLink = document.createElement('a');
                     fileLink.textContent = "In bản vẽ";
                     const fileName = encodeURIComponent(productData.file_ban_ve);
-                    fileLink.href = `https://www.appsheet.com/template/gettablefileurl?appName=App-AMJPKT2024-648353741-24-09-27&tableName=san_pham&fileName=${fileName}`;
+                    fileLink.href = `https://www.appsheet.com/template/gettablefileurl?appName=Quảnlýchấtlượng-648353741&tableName=san_pham&fileName=${fileName}`;
                     fileLink.style.color = "blue";
                     fileLink.style.textDecoration = "underline";
                     fileLink.style.cursor = "pointer";
@@ -709,20 +720,20 @@
                 }
 
                 // STT - Đánh số từ 1 trở đi
-                const cellSTT = row.insertCell(2);
+                const cellSTT = row.insertCell(3);
                 cellSTT.textContent = index + 1;
 
                 // Các cột khác như trước đây...
-                const cellOrder = row.insertCell(3);
+                const cellOrder = row.insertCell(4);
                 cellOrder.textContent = item.order_kd;
 
-                const cellTenChiTiet = row.insertCell(4);
+                const cellTenChiTiet = row.insertCell(5);
                 cellTenChiTiet.textContent = item.ten_chi_tiet;
 
-                const cellSoLuong = row.insertCell(5);
+                const cellSoLuong = row.insertCell(6);
                 cellSoLuong.textContent = item.sll;
 
-                
+
             });
 
             // Hủy DataTable cũ nếu đã tồn tại
@@ -742,7 +753,24 @@
                 lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Tất cả"]],
                 data: data,
                 dom: '<"top"lf>rt<"bottom"ip>', // Thêm 'f' để giữ chức năng tìm kiếm
+                columnDefs: [
+                    { width: '5%', targets: 0 },
+                    { width: '8%', targets: 1 },
+                    { width: '12%', targets: 2 },
+                    { width: '10%', targets: 3 },
+                    { width: '25%', targets: 4 },
+                    { width: '25%', targets: 5 },
+                    { width: '15%', targets: 6 }
+                ],
+                autoWidth: false,
                 columns: [
+                    {
+                        data: null,
+                        orderable: false,
+                        render: function (data, type, row) {
+                            return '<button onclick="quickPrint(\'' + row.order_kd + '\')" title="In nhanh" style="border:none; background:none; cursor:pointer; font-size:18px; padding:2px 6px;">🖨️</button>';
+                        }
+                    },
                     {
                         data: null,
                         render: function (data, type, row) {
@@ -755,7 +783,7 @@
                             // THAY ĐỔI: Lấy file_ban_ve từ dữ liệu sản phẩm
                             const productData = productCache[row.ten_chi_tiet];
                             if (productData && productData.file_ban_ve) {
-                                return '<a href="https://www.appsheet.com/template/gettablefileurl?appName=App-AMJPKT2024-648353741-24-09-27&tableName=san_pham&fileName='
+                                return '<a href="https://www.appsheet.com/template/gettablefileurl?appName=Quảnlýchấtlượng-648353741&tableName=san_pham&fileName='
                                     + encodeURIComponent(productData.file_ban_ve)
                                     + '" style="color: blue; text-decoration: underline; cursor: pointer;" onclick="window.open(this.href, \'_blank\'); return false;">In bản vẽ</a>';
                             }
@@ -771,7 +799,7 @@
                     { data: 'order_kd' },
                     { data: 'ten_chi_tiet' },
                     { data: 'sll' }
-                    
+
                 ],
                 headerCallback: function (thead, data, start, end, display) {
                     $(thead).closest('thead').hide(); // Ẩn hoàn toàn thead
@@ -983,13 +1011,14 @@
                    <p><i style="font-weight: bold;" id="note5"></i></p>
                    <p style="font-weight: bold;" id="note6"></p>
                    <p style="font-weight: bold;" id="note7"></p>
+                   <p style="font-weight: bold;" id="note8"></p>
+                   <p style="font-weight: bold;" id="note9"></p>
+                   <p style="font-weight: bold; color: red;" id="note10"></p>
                </div>
            `;
 
-            // Xử lý các ghi chú sau khi tạo form
-            if (productData) {
-                processNotes(form, productData, orderData);
-            }
+            // Xử lý các ghi chú sau khi tạo form (luôn gọi để kiểm tra 3D quang)
+            processNotes(form, productData, orderData);
 
             return form;
         }
@@ -1000,12 +1029,13 @@
             const so_file = orderData.so_file || '';
             const order_kd = orderData.order_kd || '';
 
-            // Sử dụng dữ liệu từ sản phẩm
-            const vat_lieu = productData.vat_lieu || '';
-            const mat_ngoai = productData.mat_ngoai || '';
-            const sp_de_bien_dang = productData.sp_de_bien_dang || '';
-            const mail_xn_bv = productData.mail_xn_bv || '';
-            const gc_bang_tay = productData.gc_bang_tay || '';
+            // Sử dụng dữ liệu từ sản phẩm (có thể null)
+            const vat_lieu = productData?.vat_lieu || '';
+            const mat_ngoai = productData?.mat_ngoai || '';
+            const sp_de_bien_dang = productData?.sp_de_bien_dang || '';
+            const mail_xn_bv = productData?.mail_xn_bv || '';
+            const gc_bang_tay = productData?.gc_bang_tay || '';
+            const sp_dong_dang = productData?.sp_dong_dang || '';
 
             // Note 1
             let note1 = '';
@@ -1085,14 +1115,160 @@
                 note7 = "XLBM: phải hoàn thiện đánh bóng trước khi xuất hàng => XN thực hiện:";
             }
             formElement.querySelector('#note7').textContent = note7;
+
+            // Note 8
+            let note8 = '';
+            if (sp_dong_dang === "DD") {
+                note8 = "GÓI: phải kiểm soát SẢN PHẨM ĐỒNG DẠNG trước khi gói hàng => XN thực hiện:";
+            }
+            formElement.querySelector('#note8').textContent = note8;
+
+            // Note 9 - Kiểm tra chương trình đo máy 3D quang
+            let note9 = '';
+            if (quang3DCache[ten_chi_tiet]) {
+                note9 = 'KTRA: Chi tiết đã có chương trình đo máy 3D quang => XN thực hiện:';
+            }
+            formElement.querySelector('#note9').textContent = note9;
+
+            // Note 10 - Thông tin xác nhận giao hàng PSX
+            let note10 = '';
+            const giaoHangData = giaoHangPSXCache[order_kd];
+            if (giaoHangData && Array.isArray(giaoHangData)) {
+                const parts = giaoHangData.map(item =>
+                    `* PSX đã có xác nhận: ${item.sl_da_xac_nhan_khi_giao_hang} sản phẩm ${item.noi_dung_da_xac_nhan_khi_giao_hang}`
+                );
+                note10 = parts.join(' | ');
+            }
+            formElement.querySelector('#note10').textContent = note10;
         }
 
-        // Tối ưu hóa in phiếu
+        // In nhanh 1 phiếu theo order_kd - dữ liệu đã có sẵn trong cache
+        async function quickPrint(orderId) {
+            const loadingEl = document.getElementById('loadingIndicator');
+            loadingEl.style.display = 'block';
+            loadingEl.textContent = 'Đang chuẩn bị in nhanh...';
+            const printArea = document.getElementById('printArea');
+            printArea.innerHTML = '';
+            try {
+                const orderData = orderDataMap.get(orderId) || allOrderData.find(item => item.order_kd === orderId);
+                if (!orderData) {
+                    alert('Không tìm thấy dữ liệu cho order: ' + orderId);
+                    loadingEl.style.display = 'none';
+                    return;
+                }
+
+                // Dữ liệu đã được tải sẵn từ initPage, lấy trực tiếp từ cache
+                const productData = productCache[orderData.ten_chi_tiet] || null;
+                const formElement = createForm(orderData, productData);
+                printArea.appendChild(formElement);
+                const qrContainer = formElement.querySelector('.qr-code');
+                if (qrContainer) {
+                    new QRCode(qrContainer, { text: orderData.order_kd, width: 150, height: 150, correctLevel: QRCode.CorrectLevel.H });
+                }
+                loadingEl.style.display = 'none';
+                setTimeout(() => {
+                    window.print();
+                    setTimeout(() => { printArea.innerHTML = ''; }, 500);
+                }, 300);
+            } catch (error) {
+                console.error('Lỗi in nhanh:', error);
+                loadingEl.style.display = 'none';
+                alert('Lỗi in nhanh: ' + error.message);
+                printArea.innerHTML = '';
+            }
+        }
+
+        // Hàm kiểm tra ten_chi_tiet có trong bảng thoi_gian_do_ga_lap_3d_quang không
+        async function check3DQuang(tenChiTiet) {
+            if (quang3DCache.hasOwnProperty(tenChiTiet)) {
+                return quang3DCache[tenChiTiet];
+            }
+            try {
+                const response = await fetch(`https://${region}.appsheet.com/api/v2/apps/${appId}/tables/thoi_gian_do_ga_lap_3d_quang/Action`, {
+                    method: 'POST',
+                    headers: {
+                        'ApplicationAccessKey': accessKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        Action: 'Find',
+                        Properties: {},
+                        Selector: `[ten_chi_tiet] = "${tenChiTiet}"`
+                    })
+                });
+                if (!response.ok) {
+                    quang3DCache[tenChiTiet] = null;
+                    return null;
+                }
+                const data = await response.json();
+                if (!Array.isArray(data) || data.length === 0) {
+                    quang3DCache[tenChiTiet] = null;
+                    return null;
+                }
+                // Kiểm tra khớp chính xác ten_chi_tiet (API có thể trả về kết quả không chính xác)
+                const exactMatch = data.find(item => item.ten_chi_tiet === tenChiTiet);
+                if (!exactMatch) {
+                    console.warn('3D Quang - Không khớp chính xác:', tenChiTiet,
+                        '| API trả về:', data.map(d => d.ten_chi_tiet));
+                    quang3DCache[tenChiTiet] = null;
+                    return null;
+                }
+                quang3DCache[tenChiTiet] = exactMatch;
+                return exactMatch;
+            } catch (error) {
+                console.error('3D Quang - Lỗi:', tenChiTiet, error);
+                quang3DCache[tenChiTiet] = null;
+                return null;
+            }
+        }
+
+        // Hàm lấy dữ liệu giao hàng PSX theo order_kd
+        async function fetchGiaoHangPSX(orderKd) {
+            if (giaoHangPSXCache.hasOwnProperty(orderKd)) {
+                return giaoHangPSXCache[orderKd];
+            }
+            try {
+                const response = await fetch(`https://${region}.appsheet.com/api/v2/apps/${appId}/tables/Giao_Hang_PSX/Action`, {
+                    method: 'POST',
+                    headers: {
+                        'ApplicationAccessKey': accessKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        Action: 'Find',
+                        Properties: {},
+                        Selector: `[order_kd] = "${orderKd}"`
+                    })
+                });
+                if (!response.ok) {
+                    giaoHangPSXCache[orderKd] = null;
+                    return null;
+                }
+                const data = await response.json();
+                if (!Array.isArray(data) || data.length === 0) {
+                    giaoHangPSXCache[orderKd] = null;
+                    return null;
+                }
+                // Lọc các bản ghi có dữ liệu xác nhận
+                const confirmed = data.filter(item =>
+                    item.order_kd === orderKd &&
+                    item.sl_da_xac_nhan_khi_giao_hang &&
+                    item.noi_dung_da_xac_nhan_khi_giao_hang
+                );
+                giaoHangPSXCache[orderKd] = confirmed.length > 0 ? confirmed : null;
+                return giaoHangPSXCache[orderKd];
+            } catch (error) {
+                console.error('Giao Hang PSX - Lỗi:', orderKd, error);
+                giaoHangPSXCache[orderKd] = null;
+                return null;
+            }
+        }
+
+        // In phiếu đã chọn - dữ liệu đã có sẵn trong cache
         async function printSelectedForms() {
             const selectedOrders = [];
             document.querySelectorAll('.row-checkbox:checked').forEach(checkbox => {
-                const orderId = checkbox.getAttribute('data-order');
-                selectedOrders.push(orderId);
+                selectedOrders.push(checkbox.getAttribute('data-order'));
             });
 
             if (selectedOrders.length === 0) {
@@ -1100,60 +1276,26 @@
                 return;
             }
 
-            // Hiển thị loading indicator
-            document.getElementById('loadingIndicator').style.display = 'block';
-            document.getElementById('loadingIndicator').textContent = 'Đang chuẩn bị in phiếu...';
+            const loadingEl = document.getElementById('loadingIndicator');
+            loadingEl.style.display = 'block';
+            loadingEl.textContent = 'Đang tạo phiếu in...';
 
-            // Xóa khu vực in trước khi thêm mới
             const printArea = document.getElementById('printArea');
             printArea.innerHTML = '';
 
             try {
-                // Kiểm tra xem dữ liệu sản phẩm đã được tải chưa
-                const tenChiTiets = selectedOrders.map(orderId => {
-                    const orderData = allOrderData.find(item => item.order_kd === orderId);
-                    return orderData ? orderData.ten_chi_tiet : null;
-                }).filter(Boolean); // Lọc bỏ các giá trị null
-
-                // Lấy các sản phẩm chưa được tải
-                const missingProducts = tenChiTiets.filter(tenChiTiet => !productCache[tenChiTiet]);
-
-                // Nếu còn sản phẩm chưa tải, tải thêm
-                if (missingProducts.length > 0) {
-                    document.getElementById('loadingIndicator').textContent =
-                        `Đang tải thông tin cho ${missingProducts.length} sản phẩm còn thiếu...`;
-
-                    // Tải từng sản phẩm còn thiếu
-                    for (const tenChiTiet of missingProducts) {
-                        const productData = await fetchProductData(tenChiTiet);
-                        if (productData && tenChiTiet) {
-                            productCache[tenChiTiet] = productData;
-                        }
-                    }
-                }
-
-                // Tiếp tục xử lý in phiếu như trước
-                // Chuẩn bị tất cả các dữ liệu
-                const formData = selectedOrders.map(orderId => {
-                    const orderData = allOrderData.find(item => item.order_kd === orderId);
-                    if (!orderData || !orderData.ten_chi_tiet) {
-                        return [orderId, orderData, null];
-                    }
-                    return [orderId, orderData, productCache[orderData.ten_chi_tiet] || null];
-                });
-
-                // Tạo các phiếu từ dữ liệu đã có
-                for (const [orderId, orderData, productData] of formData) {
+                // Tạo các phiếu từ cache (không cần gọi API)
+                for (const orderId of selectedOrders) {
+                    const orderData = orderDataMap.get(orderId) || allOrderData.find(item => item.order_kd === orderId);
                     if (!orderData) {
                         console.error(`Không tìm thấy dữ liệu cho order: ${orderId}`);
                         continue;
                     }
 
-                    // Tạo phiếu và thêm vào khu vực in
+                    const productData = productCache[orderData.ten_chi_tiet] || null;
                     const formElement = createForm(orderData, productData);
                     printArea.appendChild(formElement);
 
-                    // Tạo mã QR cho phiếu này
                     const qrContainer = formElement.querySelector('.qr-code');
                     if (qrContainer) {
                         new QRCode(qrContainer, {
@@ -1165,23 +1307,21 @@
                     }
                 }
 
-                // Ẩn loading indicator
-                document.getElementById('loadingIndicator').style.display = 'none';
+                loadingEl.style.display = 'none';
 
-                // Thực hiện in và xóa nội dung printArea sau khi in xong
                 setTimeout(() => {
                     window.print();
                     setTimeout(() => {
-                        document.getElementById('printArea').innerHTML = '';
+                        printArea.innerHTML = '';
                     }, 500);
-                }, 500);
+                }, 300);
 
             } catch (error) {
                 console.error('Lỗi khi xử lý in phiếu:', error);
-                document.getElementById('loadingIndicator').style.display = 'none';
+                loadingEl.style.display = 'none';
                 document.getElementById('errorMessage').style.display = 'block';
                 document.getElementById('errorMessage').textContent = 'Đã xảy ra lỗi khi in phiếu: ' + error.message;
-                document.getElementById('printArea').innerHTML = '';
+                printArea.innerHTML = '';
             }
         }
 
@@ -1220,12 +1360,7 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                const text = await response.text();
-                if (!text || text.trim() === '') {
-                    return [];
-                }
-
-                const data = JSON.parse(text);
+                const data = await response.json();
                 return Array.isArray(data) ? data : [];
             } catch (error) {
                 console.error('Lỗi khi lấy dữ liệu sản phẩm:', error);
@@ -1233,34 +1368,103 @@
             }
         }
 
-        // Hàm khởi tạo trang - tải từng phần để tối ưu trải nghiệm người dùng
-        async function initPage() {
+        // Hàm lấy tất cả dữ liệu 3D quang
+        async function fetchAll3DQuang() {
             try {
-                document.getElementById('loadingIndicator').style.display = 'block';
+                const response = await fetch(`https://${region}.appsheet.com/api/v2/apps/${appId}/tables/thoi_gian_do_ga_lap_3d_quang/Action`, {
+                    method: 'POST',
+                    headers: {
+                        'ApplicationAccessKey': accessKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        "Action": "Find",
+                        "Properties": {
+                            "Locale": "vi-VN",
+                            "Timezone": "Asia/Ho_Chi_Minh"
+                        },
+                        "Rows": []
+                    })
+                });
 
-                // Bước 1: Tải dữ liệu đơn hàng trước
-                const orderData = await fetchBatchedOrders();
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return Array.isArray(data) ? data : [];
+            } catch (error) {
+                console.error('Lỗi khi lấy dữ liệu 3D quang:', error);
+                return [];
+            }
+        }
+
+        // Hàm lấy tất cả dữ liệu giao hàng PSX
+        async function fetchAllGiaoHangPSX() {
+            try {
+                const response = await fetch(`https://${region}.appsheet.com/api/v2/apps/${appId}/tables/Giao_Hang_PSX/Action`, {
+                    method: 'POST',
+                    headers: {
+                        'ApplicationAccessKey': accessKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        "Action": "Find",
+                        "Properties": {
+                            "Locale": "vi-VN",
+                            "Timezone": "Asia/Ho_Chi_Minh"
+                        },
+                        "Rows": []
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return Array.isArray(data) ? data : [];
+            } catch (error) {
+                console.error('Lỗi khi lấy dữ liệu giao hàng PSX:', error);
+                return [];
+            }
+        }
+
+        // Hàm khởi tạo trang - 2 giai đoạn: hiển thị bảng ngay, tải thêm ngầm
+        async function initPage() {
+            const loadingEl = document.getElementById('loadingIndicator');
+            try {
+                loadingEl.style.display = 'block';
+                loadingEl.textContent = 'Đang tải dữ liệu...';
+
+                // === GIAI ĐOẠN 1: Tải orders + products → hiển thị bảng NGAY ===
+                const [orderData, productData] = await Promise.all([
+                    fetchBatchedOrders(),
+                    fetchAllProducts()
+                ]);
+
                 allOrderData = orderData;
 
-                // Bước 2: Tải dữ liệu sản phẩm để có sẵn cache
-                document.getElementById('loadingIndicator').textContent = 'Đang tải dữ liệu sản phẩm...';
-                const productData = await fetchAllProducts();
+                // Tạo Map để lookup nhanh O(1) theo order_kd
+                orderDataMap = new Map();
+                for (let i = 0; i < orderData.length; i++) {
+                    orderDataMap.set(orderData[i].order_kd, orderData[i]);
+                }
 
                 // Tạo cache sản phẩm
-                productData.forEach(product => {
+                for (let i = 0; i < productData.length; i++) {
+                    const product = productData[i];
                     if (product.ten_chi_tiet) {
                         productCache[product.ten_chi_tiet] = product;
                     }
-                });
+                }
 
-                // Bước 3: Hiển thị bảng sau khi đã có đầy đủ dữ liệu
+                // Hiển thị bảng NGAY — không chờ 3D quang và PSX
                 populateTable(allOrderData);
-                document.getElementById('loadingIndicator').style.display = 'none';
+                loadingEl.style.display = 'none';
 
-                // Thiết lập sự kiện cho nút in
+                // Thiết lập sự kiện
                 document.getElementById('printSelectedBtn').addEventListener('click', printSelectedForms);
-
-                // Thiết lập sự kiện cho checkbox "Chọn tất cả"
                 document.getElementById('selectAll').addEventListener('change', function () {
                     const isChecked = this.checked;
                     document.querySelectorAll('.row-checkbox').forEach(checkbox => {
@@ -1268,10 +1472,40 @@
                     });
                 });
 
-                console.log('Đã tải xong tất cả dữ liệu');
+                console.log(`Bảng hiển thị: ${orderData.length} orders, ${productData.length} products`);
+
+                // === GIAI ĐOẠN 2: Tải 3D quang + PSX ngầm phía sau (không chặn UI) ===
+                Promise.all([
+                    fetchAll3DQuang(),
+                    fetchAllGiaoHangPSX()
+                ]).then(([quang3DData, giaoHangPSXData]) => {
+                    // Tạo cache 3D quang
+                    for (let i = 0; i < quang3DData.length; i++) {
+                        const item = quang3DData[i];
+                        if (item.ten_chi_tiet) {
+                            quang3DCache[item.ten_chi_tiet] = item;
+                        }
+                    }
+
+                    // Tạo cache giao hàng PSX (gom theo order_kd, chỉ giữ bản ghi có xác nhận)
+                    for (let i = 0; i < giaoHangPSXData.length; i++) {
+                        const item = giaoHangPSXData[i];
+                        if (item.order_kd && item.sl_da_xac_nhan_khi_giao_hang && item.noi_dung_da_xac_nhan_khi_giao_hang) {
+                            if (!giaoHangPSXCache[item.order_kd]) {
+                                giaoHangPSXCache[item.order_kd] = [];
+                            }
+                            giaoHangPSXCache[item.order_kd].push(item);
+                        }
+                    }
+
+                    console.log(`Background cache: ${quang3DData.length} 3D quang, ${giaoHangPSXData.length} PSX`);
+                }).catch(err => {
+                    console.warn('Lỗi tải dữ liệu nền (3D quang/PSX):', err);
+                });
+
             } catch (error) {
                 console.error('Lỗi khởi tạo trang:', error);
-                document.getElementById('loadingIndicator').style.display = 'none';
+                loadingEl.style.display = 'none';
                 document.getElementById('errorMessage').style.display = 'block';
                 document.getElementById('errorMessage').textContent = 'Đã xảy ra lỗi: ' + error.message;
             }
