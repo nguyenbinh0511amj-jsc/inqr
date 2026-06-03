@@ -1430,36 +1430,30 @@
             }
         }
 
-        // Hàm khởi tạo trang - 2 giai đoạn: hiển thị bảng ngay, tải thêm ngầm
+        // Hàm khởi tạo trang - hiển thị bảng ngay khi có orders
         async function initPage() {
             const loadingEl = document.getElementById('loadingIndicator');
             try {
                 loadingEl.style.display = 'block';
                 loadingEl.textContent = 'Đang tải dữ liệu...';
 
-                // === GIAI ĐOẠN 1: Tải orders + products → hiển thị bảng NGAY ===
-                const [orderData, productData] = await Promise.all([
-                    fetchBatchedOrders(),
-                    fetchAllProducts()
-                ]);
+                // Bắt đầu TẤT CẢ fetch cùng lúc (không chờ nhau)
+                const ordersPromise = fetchBatchedOrders();
+                const productsPromise = fetchAllProducts();
+                const quang3DPromise = fetchAll3DQuang();
+                const psxPromise = fetchAllGiaoHangPSX();
 
+                // Chờ CHỈ orders — hiển thị bảng NGAY khi có
+                const orderData = await ordersPromise;
                 allOrderData = orderData;
 
-                // Tạo Map để lookup nhanh O(1) theo order_kd
+                // Tạo Map để lookup nhanh
                 orderDataMap = new Map();
                 for (let i = 0; i < orderData.length; i++) {
                     orderDataMap.set(orderData[i].order_kd, orderData[i]);
                 }
 
-                // Tạo cache sản phẩm
-                for (let i = 0; i < productData.length; i++) {
-                    const product = productData[i];
-                    if (product.ten_chi_tiet) {
-                        productCache[product.ten_chi_tiet] = product;
-                    }
-                }
-
-                // Hiển thị bảng NGAY — không chờ 3D quang và PSX
+                // Hiển thị bảng NGAY — không chờ products, 3D, PSX
                 populateTable(allOrderData);
                 loadingEl.style.display = 'none';
 
@@ -1472,22 +1466,32 @@
                     });
                 });
 
-                console.log(`Bảng hiển thị: ${orderData.length} orders, ${productData.length} products`);
+                console.log(`Bảng hiển thị: ${orderData.length} orders`);
 
-                // === GIAI ĐOẠN 2: Tải 3D quang + PSX ngầm phía sau (không chặn UI) ===
-                Promise.all([
-                    fetchAll3DQuang(),
-                    fetchAllGiaoHangPSX()
-                ]).then(([quang3DData, giaoHangPSXData]) => {
-                    // Tạo cache 3D quang
-                    for (let i = 0; i < quang3DData.length; i++) {
-                        const item = quang3DData[i];
-                        if (item.ten_chi_tiet) {
-                            quang3DCache[item.ten_chi_tiet] = item;
+                // Các dữ liệu còn lại tải ngầm — khi nào xong thì cập nhật cache
+                productsPromise.then(productData => {
+                    for (let i = 0; i < productData.length; i++) {
+                        if (productData[i].ten_chi_tiet) {
+                            productCache[productData[i].ten_chi_tiet] = productData[i];
                         }
                     }
+                    console.log(`Products cached: ${productData.length}`);
+                    // Cập nhật lại bảng để hiện link "In bản vẽ"
+                    if (dataTable) {
+                        dataTable.rows().invalidate().draw(false);
+                    }
+                }).catch(err => console.warn('Lỗi tải products:', err));
 
-                    // Tạo cache giao hàng PSX (gom theo order_kd, chỉ giữ bản ghi có xác nhận)
+                quang3DPromise.then(quang3DData => {
+                    for (let i = 0; i < quang3DData.length; i++) {
+                        if (quang3DData[i].ten_chi_tiet) {
+                            quang3DCache[quang3DData[i].ten_chi_tiet] = quang3DData[i];
+                        }
+                    }
+                    console.log(`3D quang cached: ${quang3DData.length}`);
+                }).catch(err => console.warn('Lỗi tải 3D quang:', err));
+
+                psxPromise.then(giaoHangPSXData => {
                     for (let i = 0; i < giaoHangPSXData.length; i++) {
                         const item = giaoHangPSXData[i];
                         if (item.order_kd && item.sl_da_xac_nhan_khi_giao_hang && item.noi_dung_da_xac_nhan_khi_giao_hang) {
@@ -1497,11 +1501,8 @@
                             giaoHangPSXCache[item.order_kd].push(item);
                         }
                     }
-
-                    console.log(`Background cache: ${quang3DData.length} 3D quang, ${giaoHangPSXData.length} PSX`);
-                }).catch(err => {
-                    console.warn('Lỗi tải dữ liệu nền (3D quang/PSX):', err);
-                });
+                    console.log(`PSX cached: ${giaoHangPSXData.length}`);
+                }).catch(err => console.warn('Lỗi tải PSX:', err));
 
             } catch (error) {
                 console.error('Lỗi khởi tạo trang:', error);
