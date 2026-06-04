@@ -621,6 +621,11 @@
         const giaoHangPSXCache = {}; // Cache cho dữ liệu giao hàng PSX
         let orderDataMap = new Map(); // Map để lookup nhanh theo order_kd
 
+        // Promise toàn cục để đảm bảo dữ liệu nền đã tải xong trước khi in
+        let productsReadyPromise = Promise.resolve();
+        let quang3DReadyPromise = Promise.resolve();
+        let psxReadyPromise = Promise.resolve();
+
         // Fetch dữ liệu đơn hàng
         async function fetchBatchedOrders() {
             try {
@@ -1147,6 +1152,10 @@
             const loadingEl = document.getElementById('loadingIndicator');
             loadingEl.style.display = 'block';
             loadingEl.textContent = 'Đang chuẩn bị in nhanh...';
+
+            // Chờ dữ liệu nền (products, 3D quang, PSX) nạp xong
+            await Promise.all([productsReadyPromise, quang3DReadyPromise, psxReadyPromise]);
+
             const printArea = document.getElementById('printArea');
             printArea.innerHTML = '';
             try {
@@ -1279,6 +1288,9 @@
             const loadingEl = document.getElementById('loadingIndicator');
             loadingEl.style.display = 'block';
             loadingEl.textContent = 'Đang tạo phiếu in...';
+
+            // Chờ dữ liệu nền (products, 3D quang, PSX) nạp xong
+            await Promise.all([productsReadyPromise, quang3DReadyPromise, psxReadyPromise]);
 
             const printArea = document.getElementById('printArea');
             printArea.innerHTML = '';
@@ -1469,7 +1481,7 @@
                 console.log(`Bảng hiển thị: ${orderData.length} orders`);
 
                 // Các dữ liệu còn lại tải ngầm — khi nào xong thì cập nhật cache
-                productsPromise.then(productData => {
+                productsReadyPromise = productsPromise.then(productData => {
                     for (let i = 0; i < productData.length; i++) {
                         if (productData[i].ten_chi_tiet) {
                             productCache[productData[i].ten_chi_tiet] = productData[i];
@@ -1482,7 +1494,7 @@
                     }
                 }).catch(err => console.warn('Lỗi tải products:', err));
 
-                quang3DPromise.then(quang3DData => {
+                quang3DReadyPromise = quang3DPromise.then(quang3DData => {
                     for (let i = 0; i < quang3DData.length; i++) {
                         if (quang3DData[i].ten_chi_tiet) {
                             quang3DCache[quang3DData[i].ten_chi_tiet] = quang3DData[i];
@@ -1491,7 +1503,7 @@
                     console.log(`3D quang cached: ${quang3DData.length}`);
                 }).catch(err => console.warn('Lỗi tải 3D quang:', err));
 
-                psxPromise.then(giaoHangPSXData => {
+                psxReadyPromise = psxPromise.then(giaoHangPSXData => {
                     for (let i = 0; i < giaoHangPSXData.length; i++) {
                         const item = giaoHangPSXData[i];
                         if (item.order_kd && item.sl_da_xac_nhan_khi_giao_hang && item.noi_dung_da_xac_nhan_khi_giao_hang) {
