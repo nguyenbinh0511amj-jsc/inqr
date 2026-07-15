@@ -125,6 +125,7 @@
         .auto-size-name {
           overflow: hidden;
           white-space: nowrap;
+          text-overflow: clip;
         }
 
         .no-print {
@@ -1359,10 +1360,10 @@
           <div class="${wrapperClass}">
             <table class="label-table">
               <colgroup>
-                <col style="width: 22%;">
-                <col style="width: 30%;">
-                <col style="width: 18%;">
-                <col style="width: 30%;">
+                <col style="width: 25%;">
+                <col style="width: 35%;">
+                <col style="width: 15%;">
+                <col style="width: 25%;">
               </colgroup>
               <tr class="row-company">
                 <td class="header-label">Tên công ty</td>
@@ -1370,7 +1371,7 @@
               </tr>
               <tr class="row-address">
                 <td class="header-label">Địa chỉ</td>
-                <td class="header-value" colspan="3" style="font-size: 9px;">${COMPANY_ADDRESS}</td>
+                <td class="header-value" colspan="3" style="font-size: 9px; white-space: nowrap; overflow: hidden;">${COMPANY_ADDRESS}</td>
               </tr>
               <tr class="row-detail-header">
                 <td class="col-label">Order KD</td>
@@ -1498,10 +1499,14 @@
           fontSize = 13;
         } else if (text.length < 16) {
           fontSize = 12;
+        } else if (text.length < 20) {
+          fontSize = 11;
+        } else if (text.length < 25) {
+          fontSize = 10;
         } else {
-          fontSize = 12;
+          fontSize = 9;
         }
-        if (fontSize < 12) fontSize = 12;
+        if (fontSize < 8) fontSize = 8;
         element.style.fontSize = fontSize + "px";
       }
 
